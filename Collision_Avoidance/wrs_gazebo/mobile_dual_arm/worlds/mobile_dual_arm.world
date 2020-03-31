@@ -214,10 +214,31 @@
             </contact>
           </surface>
         </collision>
+          
+        <sensor name="RFsrRL" type="contact">
+          <always_on>1</always_on>
+          <update_rate>20</update_rate>
+          <visualize>true</visualize>
+          <contact>
+              <collision>table_box_collision</collision>
+              <!-- <collision>table_box_collision</collision> -->
+              <!-- <collision name="${side}_Link_2_collision"> -->
+          </contact>
+          <plugin name="gazebo_ros_bumper_controller" filename="libgazebo_ros_bumper.so">
+              <!-- <robotNamespace>nubot</robotNamespace> -->
+              <alwaysOn>true</alwaysOn>
+              <updateRate>20</updateRate>
+              <bumperTopicName>bumper2</bumperTopicName>
+              <frameName>symbol</frameName>
+          </plugin>
+        </sensor>
+
+
+
       </link>
-      <static>1</static>
+      <static>0</static>
       <allow_auto_disable>1</allow_auto_disable>
-      <pose frame=''>0.58 0 0.345 0 0 0</pose>
+      <pose frame=''>0.55 0 0.345 0 0 0</pose>
     </model>
 
 
@@ -244,7 +265,7 @@
       <visual name='visual'>
         <geometry>
           <box>
-            <size>0.2 0.2 0.35</size>
+            <size>0.1 0.1 0.35</size>
           </box>
         </geometry>
         <material>
@@ -327,11 +348,10 @@
             <visualize>true</visualize>
             <contact>
                <collision>aa_box_collision</collision>
-               <!-- <collision>table_box_collision</collision> -->
-               <!-- <collision name="${side}_Link_2_collision"> -->
+        
             </contact>
-            <plugin name="gazebo_ros_bumper_ controller" filename="libgazebo_ros_bumper.so">
-               <!-- <robotNamespace>nubot</robotNamespace> -->
+            <plugin name="gazebo_ros_bumper_controller" filename="libgazebo_ros_bumper.so">
+               
                <alwaysOn>true</alwaysOn>
                <updateRate>20</updateRate>
                <bumperTopicName>bumper</bumperTopicName>

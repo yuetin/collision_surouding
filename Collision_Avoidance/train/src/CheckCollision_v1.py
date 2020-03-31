@@ -20,6 +20,7 @@ class CheckCollision():
         self.__bumper = None
         self.__robot = "_arm"
         rospy.Subscriber("/bumper",ContactsState,self.Sub_Bumper)
+        rospy.Subscriber("/bumper2",ContactsState,self.Sub_Bumper2)
 
     def checkCollision(self, RobotLinkPos_Master, RobotLinkPos_Slave):
 
@@ -137,6 +138,19 @@ class CheckCollision():
                 # else:
                     # print("aaa")
 
+    def Sub_Bumper2(self,msg = None):
+        while msg is None and not rospy.is_shutdown():
+            try:
+                # msg = rospy.wait_for_message("/bumper", ContactsState)
+                msg = rospy.wait_for_message("/bumper2", ContactsState, timeout=1.)
+            except:
+                print("don't listen bumper2")
+
+        if(len(msg.states)):
+            for state in msg.states:
+                if(self.__robot in state.info):
+                    self.__bumper = True
+                    print("fuckkkk")
     # def Check_Connection(self):
     #     init = None
     #     # while init is None and not rospy.is_shutdown():

@@ -8,14 +8,14 @@ import numpy as np
 import math
 import rospy
 import tensorflow as tf
-from sac_v14 import SAC
-from env_v20 import Test
+from sac_v16 import SAC
+from env_v23 import Test
 from manipulator_h_base_module_msgs.msg import P2PPose
 
 MAX_EPISODES = 100000
 MAX_EP_STEPS =  600
 MEMORY_CAPACITY = 10000
-BATTH_SIZE = 512
+BATCH_SIZE = 512
 SIDE = ['right_', 'left_']
 SIDE_ = ['R', 'L']
 GOAL_REWARD = 800
@@ -52,6 +52,14 @@ def worker(name, workers, agent):
             RUN_FLAG[workers].set()
         RUN_FLAG[workers].wait()
 
+        s_arr = []
+        a_arr = []
+        r_arr = []
+        s__arr = []
+        done_arr = []
+
+        img_arr = []
+        s = []
         s = env.reset()
         
         ep_reward = 0
@@ -61,13 +69,33 @@ def worker(name, workers, agent):
         ep = EP[name]
         SUCCESS_ARRAY[name, ep%500] = 0.
         # COLLISION = False
+        first_fail = True
         for j in range(MAX_EP_STEPS):
             WORKER_EVENT[name].wait()
-            
+            # s = s.tolist()
             a = agent.choose_action(s)
-            s_, r, done, success = env.step(a)
-            if j>1:
-                agent.replay_buffer[workers].store_transition(s, a, r, s_, done)
+            rd = np.random.rand()
+            a *= (rd*3+0.5)
+            s_, r, done, success, fail = env.step(a)
+            # , succcccccccccccccckkkkk
+            if j>10:
+                s_arr.append(s)
+                a_arr.append(a)
+                r_arr.append(r)
+                s__arr.append(s_)
+                # img_arr.append(succcccccccccccccckkkkk)
+                done_arr.append(done)
+                # agent.replay_buffer[workers].store_transition(s, a, r, s_, done)
+                # if fail:
+                #     if first_fail:
+                #         first_fail = False
+                #         for k in range(50):
+                #             if k>=len(r_arr):
+                #                 break
+                #             r_arr[-k-1] -= (2-(k*0.04))
+                #     else:
+                #         r_arr[-1] -= 2
+
             success_cnt += int(success)
             done_cnt += int(done)
             # if collision:
@@ -76,7 +104,7 @@ def worker(name, workers, agent):
             ep_reward += r
 
             COUNTER[name]+=1
-            if COUNTER[name] >= BATTH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
+            if COUNTER[name] >= BATCH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
                 WORKER_EVENT[name].clear()
                 for _ in range(2+int(ep/1000)):
                     agent.learn(TRAIN_CNT[name])
@@ -90,6 +118,15 @@ def worker(name, workers, agent):
                 break
             # if done_cnt-success_cnt > 100:
             #     break
+        
+        for i in range(len(s_arr)):
+            agent.replay_buffer[workers].store_transition(s_arr[i], a_arr[i], r_arr[i], s__arr[i], done_arr[i])
+        s_arr.clear()
+        a_arr.clear()
+        r_arr.clear()
+        s__arr.clear()
+        done_arr.clear()
+       
 
         SUCCESS_RATE = 0
         for z in SUCCESS_ARRAY[name]:
@@ -128,7 +165,7 @@ def train(name):
     threads_ = []
     print(threading.current_thread())
     env = Test(name, 0)
-    agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim,
+    agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_dim=env.depth_dim,
             lr_actor=1e-3, lr_value=1e-3, gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
     env = None
     print('name', name, 'agentID', id(agent))

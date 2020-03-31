@@ -15,7 +15,7 @@ from manipulator_h_base_module_msgs.msg import P2PPose
 MAX_EPISODES = 100000
 MAX_EP_STEPS =  600
 MEMORY_CAPACITY = 10000
-BATTH_SIZE = 512
+BATTH_SIZE = 128
 SIDE = ['right_', 'left_']
 SIDE_ = ['R', 'L']
 GOAL_REWARD = 800
@@ -76,14 +76,14 @@ def worker(name, workers, agent):
             a = agent.choose_action(s)
             rd = np.random.rand()
             a *= (rd*3+0.5)
-            s_, r, done, success, fail = env.step(a)
+            s_, r, done, success, fail, succcccccccccccccckkkkk = env.step(a)
             # , succcccccccccccccckkkkk
             if j>10:
                 s_arr.append(s)
                 a_arr.append(a)
                 r_arr.append(r)
                 s__arr.append(s_)
-                # img_arr.append()
+                img_arr.append(succcccccccccccccckkkkk)
                 done_arr.append(done)
                 # agent.replay_buffer[workers].store_transition(s, a, r, s_, done)
                 # if fail:
@@ -120,7 +120,7 @@ def worker(name, workers, agent):
             #     break
         
         for i in range(len(s_arr)):
-            agent.replay_buffer[workers].store_transition(s_arr[i], a_arr[i], r_arr[i], s__arr[i], done_arr[i])
+            agent.replay_buffer[workers].store_transition(s_arr[i], a_arr[i], r_arr[i], s__arr[i], img_arr[i], done_arr[i])
         s_arr.clear()
         a_arr.clear()
         r_arr.clear()
@@ -165,7 +165,7 @@ def train(name):
     threads_ = []
     print(threading.current_thread())
     env = Test(name, 0)
-    agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_img=env.depth_dim,
+    agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_dim=env.depth_dim,
             lr_actor=1e-3, lr_value=1e-3, gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
     env = None
     print('name', name, 'agentID', id(agent))

@@ -15,6 +15,7 @@
 
   <!-- <link name="base_link" /> -->
   <xacro:realsense_d435 connected_to="world" complett_links="true" ns="0" xyz="-0.05 0 1.8" rpy = "0 1 0"/>
+  <!-- <xacro:realsense_d435 connected_to="world" complett_links="true" ns="0" xyz="-0.05 0 1.8" rpy = "0 0.85 0"/> -->
   <!-- <xacro:realsense_d435 connected_to="world" complett_links="true" ns="1" xyz="0.01 0 1.3" rpy = "0 0 0"/> -->
   <!-- <joint name="fixed1" type="fixed">
     <origin
@@ -46,22 +47,6 @@
   <xacro:suction side="l"  parent="l_Link_6">
     <origin xyz="0 0.016 0" rpy="0 0 1.57" />
   </xacro:suction>
-
-
-
-  <!-- <joint name="fixed4" type="fixed">
-    <origin
-      xyz="0 0 0.562"
-      rpy="0 0 0" />
-    <parent link="world"/>
-    <child link="base_link"/>
-  </joint> -->
-
-<!-- 
-  <xacro:realsense_d435 connected_to="base_link" complett_links="true" ns="" xyz="0.01 0 5" rpy = "0 0 0">
-    <origin xyz="0 0.016 0" rpy="0 0 1.57" />
-  </xacro:realsense_d435> -->
-
 
 
 

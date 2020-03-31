@@ -19,26 +19,6 @@
       <gravity>0 0 -9.8</gravity>
     </physics>
 
-
-
-
-    <!-- <model name="/table_box">
-      <static>true</static>
-      <link name="/table_box">
-        <visual name="visual">
-          <pose>0.6 0 0.3 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>1 1 0.6</size>
-            </box>
-          </geometry>
-          <material><ambient>0.1 0.1 0.1 1</ambient></material>
-        </visual>
-      </link>
-    </model> -->
-
-
-
     <model name="/right_arm">
       <pose>0.3 0.1 13  0 0 0</pose>
       <static>false</static>
@@ -100,9 +80,7 @@
               <length>0.2</length>
             </cylinder>
           </geometry>
-          <material>
-            <ambient>1 0 0 1</ambient>
-          </material>
+          <material><ambient>1 0 0 1</ambient></material>
         </visual>
       </link>
     </model>
@@ -117,60 +95,5 @@
       </camera>
     </gui>
 
-
-
-
-<!-- <sensor name="RFsrRL" type="contact">
-  <always_on>1</always_on>
-  <update_rate>20</update_rate>
-  <visualize>true</visualize>
-    <plugin name="gazebo_ros_bumper_ controller" filename="libgazebo_ros_bumper.so">
-      <robotNamespace>nubot</robotNamespace>
-      <alwaysOn>true</alwaysOn>
-      <updateRate>20</updateRate>
-      <bumperTopicName>bumper</bumperTopicName>
-      <frameName>symbol</frameName>
-    </plugin>
-</sensor> -->
-<!-- 
-<gazebo>
-  <plugin name="gazebo_ros_bumper_controller" filename="libgazebo_ros_bumper.so">
-    <alwaysOn>true</alwaysOn>
-    <updateRate>20</updateRate>
-    <bumperTopicName>bumper</bumperTopicName>
-    <frameName>world</frameName>
-  </plugin>
-</gazebo> -->
-
-<!-- 
-<gazebo reference="bump_sensor">
-<sensor name="main_bumper" type="contact">
-    <selfCollide>true</selfCollide>
-    <alwaysOn>true</alwaysOn>
-    <updateRate>15.0</updateRate>
-    <material>Gazebo/Red</material>
-    <contact>
-       <collision>bump_sensor_collision</collision>
-    </contact>
-    <plugin name="gazebo_ros_bumper_controller" filename="libgazebo_ros_bumper.so">   
-        <bumperTopicName>bumper_vals</bumperTopicName>
-        <frameName>world</frameName>
-    </plugin>
-</sensor>
-</gazebo> -->
-
-
-
-
-
-
-
-
-
-
-
-
-
   </world>
 </sdf>
-
