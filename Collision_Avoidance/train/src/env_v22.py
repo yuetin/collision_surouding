@@ -19,6 +19,7 @@ from gym import core, spaces
 from gym.utils import seeding
 import rospy
 import math
+import random
 import time
 from train.srv import get_state, move_cmd, set_goal, set_start
 from CheckCollision_v1 import CheckCollision
