@@ -357,11 +357,24 @@
                <bumperTopicName>bumper</bumperTopicName>
                <frameName>symbol</frameName>
             </plugin>
-         </sensor>
+      </sensor>
+
+      <!-- position controller -->
+
 
 
 
     </link>
+    
+      <plugin name="base_controller" filename="libgazebo_ros_planar_move.so">
+        <commandTopic>cmd_vel</commandTopic>
+        <odometryTopic>odom</odometryTopic>
+        <odometryFrame>/odom</odometryFrame>
+        <odometryRate>100.0</odometryRate>
+        <robotBaseFrame>link</robotBaseFrame>
+        <!-- <broadcastTF>true</broadcastTF> -->
+      </plugin>
+   
   <static>0</static>
   <allow_auto_disable>1</allow_auto_disable>
   <pose frame=''>0.58 0 0.72 0 0 0</pose>

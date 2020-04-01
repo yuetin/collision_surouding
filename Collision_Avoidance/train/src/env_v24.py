@@ -20,6 +20,7 @@ from gym.utils import seeding
 import rospy
 import math
 import time
+import random
 from train.srv import get_state, move_cmd, set_goal, set_start
 from CheckCollision_v1 import CheckCollision
 from gazebo_msgs.msg import ModelState
@@ -30,8 +31,7 @@ import cv2
 
 from cv_bridge import CvBridge, CvBridgeError
 from cv_bridge.boost.cv_bridge_boost import getCvType
-from sensor_msgs.msg import Image,CompressedImage
-from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Image
 from gazebo_msgs.msg import ContactsState,ContactState
 # sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 # import sys
@@ -74,7 +74,7 @@ class Test(core.Env):
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
         self.action_space = spaces.Discrete(3)
         self.act_dim=8
-        self.obs_dim=57
+        self.obs_dim=57+(160*120)
         self.state = []
         self.action = []
         self.cmd = []
@@ -118,7 +118,8 @@ class Test(core.Env):
         )
 
         self.bridge = CvBridge()
-        self.depth_dim = 76800
+        self.depth_dim = 768
+        self.cv_depth = None
         self.depth_image = None
         self.image_input = None
         self.__bumper = None
@@ -126,16 +127,15 @@ class Test(core.Env):
         self.images_ = []
         
         
-        self.aa_box_x = 0
-        self.aa_box_y = 0
+
+        
         # self.set_mode_pub.publish('set_mode')
-        rospy.Subscriber('/ir_depth/depth/image_raw',Image,self.callback )
         self.seed(345*(workers+1) + 467*(name+1))
         self.reset()
 
         ## image (gazebo)
 
-        
+        rospy.Subscriber('/ir_depth/depth/image_raw',Image,self.callback)
         # rospy.Subscriber("odom", Odometry,self.get_aa_box_position)
         # rospy.Subscriber("/bumper",ContactsState,self.Sub_Bumper)
     
@@ -149,34 +149,62 @@ class Test(core.Env):
         
     ## image (gazebo)
 
-    def get_aa_box_position(self,msg = None):
-        print(msg.pose.pose.position.x)
-        print(msg.pose.pose.position.y)
-
-
-    # def set_aa_box_vel(self, goal_x, goal_y):
-        
     def callback(self,data):
         try:
-            if len(data.data) == 0:
-                print("data.data == 0")
-            tmp = self.bridge.imgmsg_to_cv2(data,"32FC1")
-            tmp = cv2.resize(tmp , (320,240))
-            where_are_nan = np.isnan(tmp)
-            where_are_inf = np.isinf(tmp)
-            tmp[where_are_nan] = 10
-            tmp[where_are_inf] = 10
-            # print(tmp)
-            self.images_ = tmp / 10
-            # print("aaas")
-            if self.images_.shape == (0,):
-                rospy.logwarn("self.images_ = 0")
-            # print("aaaaaaaaaaa")
+            # rospy.loginfo(rospy.get_caller_id() + "I heard %d", len(data.data))
+            # self.cv_depth = self.bridge.imgmsg_to_cv2(data,"32FC1")
+            # self.cv_depth = data
+            # print(int(data.data[0]))
+            # print('=======================')
+            # tmp = self.bridge.imgmsg_to_cv2(data,"16UC1")
+            # self.cv_depth = cv2.applyColorMap(cv2.convertScaleAbs(tmp, alpha=0.03), cv2.COLORMAP_JET)
+            # self.depth_image = self.cv_depth
+            # print(data.height)
+            # print('fuck',data.width)
+            # print('fuck',data.encoding)
+            # print('fuck',data.is_bigendian)
+            # print('fuck',data.step)
+            # print('fuck',len(data.data))
+            # print('fuck',tset[1000])
+            # print('fuck',data.data[1000])
+            depth_array = self.bridge.imgmsg_to_cv2(data,"32FC1")
+            # depth_array = np.array(tmp, dtype=np.float32)
+            depth_array = cv2.resize(depth_array , (160,120))
+            # print('fuck',depth_array[0][0])
+            # cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+            
+            
+            # print('fuck', tmp[100])
+            # cv_image_array = np.array(tmp, dtype = np.dtype('f8'))
+            # cv_image_norm = cv2.normalize(cv_image_array, cv_image_array, 0, 1, cv2.NORM_MINMAX)
+            # cv_image_resized = cv2.resize(cv_image_norm, self.desired_shape, interpolation = cv2.INTER_CUBIC)
+            # self.images_ = 
+            where_are_nan = np.isnan(depth_array)
+            where_are_inf = np.isinf(depth_array)
+            depth_array[where_are_nan] = 10
+            depth_array[where_are_inf] = 10
+            
+            # self.images_ = cv2.resize(tmp , (640,480))
             # print(self.images_)
+            self.images_ = depth_array / 10
+            # print(self.images_[0][0])
             # cv2.imshow('My Image', self.images_)
             # cv2.waitKey(1)
+            # cv2.imshow("Image from my node", self.depthimg)
+            # cv2.waitKey(1)
+            # tmp = cv2.applyColorMap(cv2.convertScaleAbs(tmp, alpha=0.03), cv2.COLORMAP_JET)
+            # print(self.depth_image[240,240])
+            # print("WTFFFFFFFFFFFFFFFFFFFff")
+            # self.image_input = tmp
 
-
+            #  
+            # self.__image= int.from_bytes(data.data, byteorder='big', signed=False)
+            # print(tmp)
+            # print(data)
+            # img = cv2.imread()
+            # cv2.imshow('My Image', self.images_)
+            # cv2.imwrite('output.jpg', self.images_)
+            # cv2.waitKey(0)
         except CvBridgeError as e:
             print(e)
 
@@ -230,30 +258,31 @@ class Test(core.Env):
     
 
     # CNN
-    # def build_cnnlayer(self, conv_in, net_name):
-    #     # build conv layer
-    #     conv_out = None
-    #     for key in sorted(cfg[net_name]):
-    #         com = cfg[net_name][key]        #component
-    #         if com['type'] in 'conv':
-    #             stride = com['stride']
-    #             conv_out = Conv2D(conv_in, com['kernel_size'], com['out_channel'], name_prefix=net_name+'_'+key, strides=[1, stride, stride, 1])
-    #             conv_in  = conv_out
-    #             if 'spatial_softmax' in com:
-    #                 self.logger.debug('Last_conv.shape = {}'.format(conv_in.shape))
-    #                 conv_out = tf.contrib.layers.spatial_softmax(conv_in, name='spatial_softmax')
+    def build_cnnlayer(self, conv_in, net_name):
+        # build conv layer
+        conv_out = None
+        for key in sorted(cfg[net_name]):
+            com = cfg[net_name][key]        #component
+            if com['type'] in 'conv':
+                stride = com['stride']
+                conv_out = Conv2D(conv_in, com['kernel_size'], com['out_channel'], name_prefix=net_name+'_'+key, strides=[1, stride, stride, 1])
+                conv_in  = conv_out
+                if 'spatial_softmax' in com:
+                    self.logger.debug('Last_conv.shape = {}'.format(conv_in.shape))
+                    conv_out = tf.contrib.layers.spatial_softmax(conv_in, name='spatial_softmax')
         
-    #     # print(conv_out.shape)
-    #     # if don't have spatial softmax need to flatten
-    #     if len(conv_out.shape) > 2:
-    #         conv_out = Flaten(conv_out)
+        # print(conv_out.shape)
+        # if don't have spatial softmax need to flatten
+        if len(conv_out.shape) > 2:
+            conv_out = Flaten(conv_out)
 
-    #     return conv_out
+        return conv_out
 
 
     # def _save_img(self, img_buffer, img_):
+    # def get_aa_box_position(pose)
+    #     print(pose)
 
-        
 
 
     def get_state_client(self, name):
@@ -322,7 +351,7 @@ class Test(core.Env):
 
     def set_object(self, name, pos, ori):
         msg = ModelState()
-        msg.model_name = name+self.workers
+        msg.model_name = name
         msg.pose.position.x = pos[0]
         msg.pose.position.y = pos[1]
         msg.pose.position.z = pos[2]
@@ -394,22 +423,22 @@ class Test(core.Env):
         self.state = np.append(self.state, self.dis_ori)
         self.state = np.append(self.state, self.joint_pos[6:12])
         self.state = np.append(self.state, self.goal_angle)
-        # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         # print(self.images_)
-        # time.sleep(1)
+        self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
+
+        self.state = np.append(self.state, self.img_suckkkkkkkkkkkkk)
+
         aabox_X = random.uniform(0.08,0.5)
         aabox_Y = random.uniform(-0.5,0.5)
         self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
         self.set_object('aa_box', (aabox_X,aabox_Y,0.8), (0, 0, 0, 0))
-        self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
         
-        print("aaa")
-        print(self.img_suckkkkkkkkkkkkk.shape)
-        print("bbb")
+
         self.collision = False
         self.done = False
         self.success = False
-        return self.state , self.img_suckkkkkkkkkkkkk
+        return self.state
 
     def set_goal(self):
         self.goal = self.np_random.uniform(low=0., high=self.range_cnt, size=(8,))
@@ -466,7 +495,7 @@ class Test(core.Env):
         alarm = []
         Link_dis = []
         s = self.state
-        suck = []
+        suck = self.image_input
 
         self.collision = False
         action_vec = a[:3]*self.ACTION_VEC_TRANS
@@ -479,14 +508,6 @@ class Test(core.Env):
 
         res = self.move_cmd_client(self.cmd, self.__name)
         res_ = self.get_state_client(self.__obname)
-
-
-        self.image_input = np.reshape(self.images_,-1)
-        # print(self.image_input.shape)
-        # print(self.image_cnn[10])
-        
-        suck = np.append(suck, self.image_input)
-
         if res.success:
             self.old, self.joint_pos[:15], self.joint_angle = np.array(res.state), res.joint_pos, res.joint_angle
             self.limit, self.goal_quat, self.quat_inv, self.joint_pos[15:30] = res.limit, res.quaterniond, res.quat_inv, res_.joint_pos
@@ -506,10 +527,14 @@ class Test(core.Env):
             s = np.append(s, self.dis_ori)
             s = np.append(s, self.joint_pos[6:12])
             s = np.append(s, self.goal_angle)
-            # print(s.shape)
 
 
+            self.image_input = np.reshape(self.images_,-1)
+            # print(self.image_cnn[10])
+           
+            # suck = np.append(suck, self.image_input)
 
+            s = np.append(s, self.image_input)
             # print(suck)
             # print(s)
         terminal = self._terminal(s, res.success, alarm)
@@ -521,7 +546,8 @@ class Test(core.Env):
         ## see
         # if self.workers == 'arm':
         #     if self.object_pub == 0:
-        #         self.set_object(self.__name, (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), (0, 0, 0, 0))
+
+        # self.set_object("aabox", (x,y,z), (0, 0, 0, 0))
         #         self.object_pub = 1
         #     else:
         #         self.set_object(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])
@@ -530,7 +556,7 @@ class Test(core.Env):
         if not res.success or self.collision or res.singularity:
             fail = True
 
-        return self.state, reward, terminal, self.success, fail, suck
+        return self.state, reward, terminal, self.success, fail
         # , self.images_
 
     def _terminal(self, s, ik_success, alarm):

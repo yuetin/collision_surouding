@@ -20,6 +20,7 @@ from gym.utils import seeding
 import rospy
 import math
 import time
+import random
 from train.srv import get_state, move_cmd, set_goal, set_start
 from CheckCollision_v1 import CheckCollision
 from gazebo_msgs.msg import ModelState
@@ -135,6 +136,7 @@ class Test(core.Env):
         ## image (gazebo)
 
         rospy.Subscriber('/ir_depth/depth/image_raw',Image,self.callback)
+        # rospy.Subscriber("odom", Odometry,self.get_aa_box_position)
         # rospy.Subscriber("/bumper",ContactsState,self.Sub_Bumper)
     
     @property
@@ -278,7 +280,8 @@ class Test(core.Env):
 
 
     # def _save_img(self, img_buffer, img_):
-
+    # def get_aa_box_position(pose)
+    #     print(pose)
 
 
 
@@ -348,7 +351,7 @@ class Test(core.Env):
 
     def set_object(self, name, pos, ori):
         msg = ModelState()
-        msg.model_name = name+self.workers
+        msg.model_name = name
         msg.pose.position.x = pos[0]
         msg.pose.position.y = pos[1]
         msg.pose.position.z = pos[2]
@@ -423,8 +426,16 @@ class Test(core.Env):
         print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         # print(self.images_)
         self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
-
+        print("aaa")
+        print(self.img_suckkkkkkkkkkkkk.shape)
+        print("bbb")
         self.state = np.append(self.state, self.img_suckkkkkkkkkkkkk)
+
+        aabox_X = random.uniform(0.08,0.5)
+        aabox_Y = random.uniform(-0.5,0.5)
+        self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
+        self.set_object('aa_box', (aabox_X,aabox_Y,0.8), (0, 0, 0, 0))
+        
 
         self.collision = False
         self.done = False
@@ -537,7 +548,8 @@ class Test(core.Env):
         ## see
         # if self.workers == 'arm':
         #     if self.object_pub == 0:
-        #         self.set_object(self.__name, (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), (0, 0, 0, 0))
+
+        # self.set_object("aabox", (x,y,z), (0, 0, 0, 0))
         #         self.object_pub = 1
         #     else:
         #         self.set_object(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])

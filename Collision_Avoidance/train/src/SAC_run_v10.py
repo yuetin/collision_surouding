@@ -8,14 +8,14 @@ import numpy as np
 import math
 import rospy
 import tensorflow as tf
-from sac_v15 import SAC
-from env_v22 import Test
+from sac_v16 import SAC
+from env_v23 import Test
 from manipulator_h_base_module_msgs.msg import P2PPose
 
 MAX_EPISODES = 100000
 MAX_EP_STEPS =  600
 MEMORY_CAPACITY = 10000
-BATTH_SIZE = 32
+BATCH_SIZE = 512
 SIDE = ['right_', 'left_']
 SIDE_ = ['R', 'L']
 GOAL_REWARD = 800
@@ -59,10 +59,8 @@ def worker(name, workers, agent):
         done_arr = []
 
         img_arr = []
-        imgex_arr = []
-        s, depth = env.reset()
-        # print(s.shape)
-        # print(depth.shape)
+        s = []
+        s = env.reset()
         
         ep_reward = 0
         success_cnt = 0
@@ -74,27 +72,18 @@ def worker(name, workers, agent):
         first_fail = True
         for j in range(MAX_EP_STEPS):
             WORKER_EVENT[name].wait()
-            a = agent.choose_action(s, depth)
-            # print("cccccccccccccccccccccc")
+            # s = s.tolist()
+            a = agent.choose_action(s)
             rd = np.random.rand()
             a *= (rd*3+0.5)
-            
-            s_, r, done, success, fail, succcccccccccccccckkkkk = env.step(a)
-            # print("cccccccccccccccccccccc")
-            # print(succcccccccccccccckkkkk.shape)
+            s_, r, done, success, fail = env.step(a)
             # , succcccccccccccccckkkkk
             if j>10:
                 s_arr.append(s)
-                # print(len(s_arr))
-                imgex_arr.append(depth)
-                # list_shape = np.array(depth).shape
-                # print(list_shape)
                 a_arr.append(a)
                 r_arr.append(r)
                 s__arr.append(s_)
-                img_arr.append(succcccccccccccccckkkkk)
-                list_shape = np.array(img_arr).shape
-                print(list_shape)
+                # img_arr.append(succcccccccccccccckkkkk)
                 done_arr.append(done)
                 # agent.replay_buffer[workers].store_transition(s, a, r, s_, done)
                 # if fail:
@@ -115,7 +104,7 @@ def worker(name, workers, agent):
             ep_reward += r
 
             COUNTER[name]+=1
-            if COUNTER[name] >= BATTH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
+            if COUNTER[name] >= BATCH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
                 WORKER_EVENT[name].clear()
                 for _ in range(2+int(ep/1000)):
                     agent.learn(TRAIN_CNT[name])
@@ -131,14 +120,13 @@ def worker(name, workers, agent):
             #     break
         
         for i in range(len(s_arr)):
-            agent.replay_buffer[workers].store_transition(s_arr[i], imgex_arr[i], a_arr[i], r_arr[i], s__arr[i], img_arr[i], done_arr[i])
+            agent.replay_buffer[workers].store_transition(s_arr[i], a_arr[i], r_arr[i], s__arr[i], done_arr[i])
         s_arr.clear()
         a_arr.clear()
         r_arr.clear()
         s__arr.clear()
         done_arr.clear()
-        img_arr.clear()
-        imgex_arr.clear()
+       
 
         SUCCESS_RATE = 0
         for z in SUCCESS_ARRAY[name]:
