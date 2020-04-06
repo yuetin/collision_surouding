@@ -15,7 +15,7 @@ from manipulator_h_base_module_msgs.msg import P2PPose
 MAX_EPISODES = 100000
 MAX_EP_STEPS =  600
 MEMORY_CAPACITY = 10000
-BATTH_SIZE = 32
+BATTH_SIZE = 64
 SIDE = ['right_', 'left_']
 SIDE_ = ['R', 'L']
 GOAL_REWARD = 800
@@ -28,6 +28,7 @@ WORKS = 1
 SUCCESS_ARRAY = np.zeros([2,500])
 GOAL_RATE = [40, 40]
 ACTION_FLAG = [False, False]
+ep_goal = [10,10]
 
 def worker(name, workers, agent):
     global SUCCESS_ARRAY, ACTION_FLAG, SAVE, COUNTER, EP
@@ -93,8 +94,8 @@ def worker(name, workers, agent):
                 r_arr.append(r)
                 s__arr.append(s_)
                 img_arr.append(succcccccccccccccckkkkk)
-                list_shape = np.array(img_arr).shape
-                print(list_shape)
+                # list_shape = np.array(img_arr).shape
+                # print(list_shape)
                 done_arr.append(done)
                 # agent.replay_buffer[workers].store_transition(s, a, r, s_, done)
                 # if fail:
@@ -115,7 +116,7 @@ def worker(name, workers, agent):
             ep_reward += r
 
             COUNTER[name]+=1
-            if COUNTER[name] >= BATTH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
+            if COUNTER[name] >= BATTH_SIZE*32 and COUNTER[name]%(128) == 0:
                 WORKER_EVENT[name].clear()
                 for _ in range(2+int(ep/1000)):
                     agent.learn(TRAIN_CNT[name])
@@ -143,8 +144,10 @@ def worker(name, workers, agent):
         SUCCESS_RATE = 0
         for z in SUCCESS_ARRAY[name]:
             SUCCESS_RATE += z/5
-        if SUCCESS_RATE >= GOAL_RATE[name]:
+        # if SUCCESS_RATE >= GOAL_RATE[name]:
+        if ep >= ep_goal[name]:
             SAVE[name] = True
+            
         else:
             SAVE[name] = False
         agent.replay_buffer[workers].store_eprwd(ep_reward*j/100)
@@ -160,17 +163,24 @@ def worker(name, workers, agent):
 
 def save(agent, name):
     print(agent.path)
-    if os.path.isdir(agent.path+str(GOAL_RATE[name])): shutil.rmtree(agent.path+str(GOAL_RATE[name]))
-    os.mkdir(agent.path+str(GOAL_RATE[name]))
-    ckpt_path = os.path.join(agent.path+str(GOAL_RATE[name]), 'SAC.ckpt')
+    # if os.path.isdir(agent.path+str(GOAL_RATE[name])): shutil.rmtree(agent.path+str(GOAL_RATE[name]))
+    # os.mkdir(agent.path+str(GOAL_RATE[name]))
+    # ckpt_path = os.path.join(agent.path+str(GOAL_RATE[name]), 'SAC.ckpt')
+    if os.path.isdir(agent.path+str(ep_goal[name])): shutil.rmtree(agent.path+str(ep_goal[name]))
+    os.mkdir(agent.path+str(ep_goal[name]))
+    ckpt_path = os.path.join(agent.path+str(ep_goal[name]), 'SAC.ckpt')
     save_path = agent.saver.save(agent.sess, ckpt_path, write_meta_graph=False)
     print("\nSave Model %s\n" % save_path)
-    if GOAL_RATE[name] < 90:
-        GOAL_RATE[name] += 5
+    # if GOAL_RATE[name] < 90:
+    #     GOAL_RATE[name] += 5
+    # else:
+    #     GOAL_RATE[name] += 2
+    if ep_goal[name] < 90:
+        ep_goal[name] += 20
     else:
-        GOAL_RATE[name] += 2
-    if GOAL_RATE[name] > 100:
-        COORD.request_stop()
+        ep_goal[name] += 5
+    # if GOAL_RATE[name] > 100:
+    #     COORD.request_stop()
 
 def train(name):
     global SAVE, COUNTER, RUN_FLAG

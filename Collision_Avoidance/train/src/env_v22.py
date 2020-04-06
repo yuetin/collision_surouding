@@ -150,17 +150,17 @@ class Test(core.Env):
         
     ## image (gazebo)
 
-    def get_aa_box_position(self,msg = None):
-        print(msg.pose.pose.position.x)
-        print(msg.pose.pose.position.y)
+    # def get_aa_box_position(self,msg = None):
+    #     print(msg.pose.pose.position.x)
+    #     print(msg.pose.pose.position.y)
 
 
     # def set_aa_box_vel(self, goal_x, goal_y):
         
     def callback(self,data):
         try:
-            if len(data.data) == 0:
-                print("data.data == 0")
+            # if len(data.data) == 0:
+            #     print("data.data == 0")
             tmp = self.bridge.imgmsg_to_cv2(data,"32FC1")
             tmp = cv2.resize(tmp , (320,240))
             where_are_nan = np.isnan(tmp)
@@ -170,8 +170,8 @@ class Test(core.Env):
             # print(tmp)
             self.images_ = tmp / 10
             # print("aaas")
-            if self.images_.shape == (0,):
-                rospy.logwarn("self.images_ = 0")
+            # if self.images_.shape == (0,):
+            #     rospy.logwarn("self.images_ = 0")
             # print("aaaaaaaaaaa")
             # print(self.images_)
             # cv2.imshow('My Image', self.images_)
@@ -323,7 +323,7 @@ class Test(core.Env):
 
     def set_object(self, name, pos, ori):
         msg = ModelState()
-        msg.model_name = name+self.workers
+        msg.model_name = name
         msg.pose.position.x = pos[0]
         msg.pose.position.y = pos[1]
         msg.pose.position.z = pos[2]

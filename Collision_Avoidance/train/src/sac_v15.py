@@ -25,7 +25,7 @@ NAME = 'SAC_v15_1'
 EPS = 1e-8
 LOAD = False
 # BATCH_SIZE = 512
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 SEED = [123, 321]
 class ReplayBuffer(object):
     def __init__(self, capacity, name):
@@ -38,11 +38,11 @@ class ReplayBuffer(object):
     def store_transition(self, obs0, img0, act, rwd, obs1, img_depth, done):
         data = (obs0, img0, act, rwd, obs1, img_depth, done)
         
-        string = ''
-        for e in data:
-            if type(obs0) == type(e):
-                string += '{} '.format(e.shape)
-        print("store_transition ", string)
+        # string = ''
+        # for e in data:
+        #     if type(obs0) == type(e):
+        #         string += '{} '.format(e.shape)
+        # print("store_transition ", string)
 
         # list_shape = np.array(obs0).shape
         # print(list_shape)
@@ -61,7 +61,7 @@ class ReplayBuffer(object):
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
         print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        print(batch)
+        # print(batch)
         obs0, img0, act, rwd, obs1, img_depth, done= map(np.stack, zip(*batch))
         print(obs0.shape, act.shape, rwd.shape, obs1.shape, img_depth.shape)
         return obs0, img0, act, rwd, obs1, img_depth, done, self.ep_reward    
@@ -195,7 +195,7 @@ class   FUCK_CNNNETWORK(object):
         padding='same',
         activation=tf.nn.relu
         )
-        print(conv1)
+        # print(conv1)
 
 
         ## 池化層 1  
@@ -204,7 +204,7 @@ class   FUCK_CNNNETWORK(object):
         pool_size=[2,2],
         strides=2
         )
-        print(pool1)
+        # print(pool1)
 
         ## CNN 第二層
         conv2=tf.layers.conv2d(
@@ -308,7 +308,7 @@ class SAC(object):
 
 
         for i in range(buffers):
-            b = ReplayBuffer(capacity=int(1e6), name=self.name+'buffer'+str(i))
+            b = ReplayBuffer(capacity=int(1e4), name=self.name+'buffer'+str(i))
             self.replay_buffer.append(b)
 
         self.OBS0 = tf.placeholder(tf.float32, [None, self.obs_dim], name=self.name+"observations0")
