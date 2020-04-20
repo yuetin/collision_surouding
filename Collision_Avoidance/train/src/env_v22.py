@@ -22,7 +22,7 @@ import math
 import random
 import time
 from train.srv import get_state, move_cmd, set_goal, set_start
-from train.msg import aa_box_pos_msg
+# from train import aa_box_pos_msg
 from CheckCollision_v1 import CheckCollision
 from gazebo_msgs.msg import ModelState
 from std_msgs.msg import String
@@ -119,12 +119,12 @@ class Test(core.Env):
             latch=True
         )
 
-        self.set_aabox_pub = rospy.Publisher(
-            'aa_box_pos_msg',
-            aa_box_pos_msg,
-            queue_size=1,
-            latch=True
-        )
+        # self.set_aabox_pub = rospy.Publisher(
+        #     'aa_box_pos_msg',
+        #     aa_box_pos_msg,
+        #     queue_size=1,
+        #     latch=True
+        # )
 
 
 
@@ -436,10 +436,10 @@ class Test(core.Env):
             self.aa_box_y = random.uniform(-0.5,0.5)
             self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
             self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
-            aa_box = aa_box_pos_msg()
-            aa_box.x = 1.
-            aa_box.y = 2.
-            self.set_aabox_pub.publish(aa_box)
+            # aa_box = aa_box_pos_msg()
+            # aa_box.x = 1.
+            # aa_box.y = 2.
+            # self.set_aabox_pub.publish(aa_box)
             # rospy.Publisher('aa_box_pos',self.aa_box_x,)
             # print(self.aa_box_x,"III",self.aa_box_x,self.aa_box_y)
 
@@ -619,8 +619,8 @@ class Test(core.Env):
 
         if terminal:
             return 3
-        reward -= self.dis_pos
-        reward -= self.dis_ori
+        reward -= self.dis_pos*5
+        reward -= self.dis_ori*5
         reward += 0.5
         
         if reward > 0:
