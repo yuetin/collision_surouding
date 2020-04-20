@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import gym
 import random
-NAME = 'SAC_v15_1'
+NAME = 'SAC_v15_3'
 # SAC_v14_6 is the best no fail
 # SAC_v14_7 1024 and last is 512 no fail
 # SAC_v14_8 all of 512 has fail
@@ -25,7 +25,7 @@ NAME = 'SAC_v15_1'
 EPS = 1e-8
 LOAD = False
 # BATCH_SIZE = 512
-BATCH_SIZE = 64
+BATCH_SIZE = 4
 SEED = [123, 321]
 class ReplayBuffer(object):
     def __init__(self, capacity, name):
@@ -60,10 +60,10 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size):
         batch = random.sample(self.buffer, batch_size)
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         # print(batch)
         obs0, img0, act, rwd, obs1, img_depth, done= map(np.stack, zip(*batch))
-        print(obs0.shape, act.shape, rwd.shape, obs1.shape, img_depth.shape)
+        # print(obs0.shape, act.shape, rwd.shape, obs1.shape, img_depth.shape)
         return obs0, img0, act, rwd, obs1, img_depth, done, self.ep_reward    
 
 class ValueNetwork(object):
@@ -226,7 +226,7 @@ class   FUCK_CNNNETWORK(object):
         conv3=tf.layers.conv2d(
         inputs=pool2,
         filters=32,
-        kernel_size=[5,5],
+        kernel_size=[3,3],
         strides=1,
         padding='same',
         activation=tf.nn.relu
@@ -242,7 +242,7 @@ class   FUCK_CNNNETWORK(object):
         conv4=tf.layers.conv2d(
         inputs=pool3,
         filters=32,
-        kernel_size=[5,5],
+        kernel_size=[3,3],
         strides=1,
         padding='same',
         activation=tf.nn.relu
@@ -262,18 +262,19 @@ class   FUCK_CNNNETWORK(object):
         activation=tf.nn.relu
         )
 
-        dropout=tf.layers.dropout(
-        inputs=dense_cnn,
-        rate=0.5,
-        )
+        # dropout=tf.layers.dropout(
+        # inputs=dense_cnn,
+        # rate=0.5,
+        # )
 
-        logits=tf.layers.dense(
-        inputs=dropout,
-        units=10
-        )
+        # logits=tf.layers.dense(
+        # inputs=dropout,
+        # units=128
+        # )
 
-        logits = tf.reshape(logits,[-1,10])
-        return logits
+        # logits = tf.reshape(logits,[-1,128])
+        # logits = tf.reshape(dropout,[-1,])
+        return dense_cnn
         # dropout=tf.layers.dropout(
         # inputs=dense,
         # rate=0.5,
@@ -369,7 +370,9 @@ class SAC(object):
         target_init = [tf.assign(tv, v)
                        for v, tv in zip(tf.global_variables(self.name+'Value'), tf.global_variables(self.name+'Target_Value'))]
         
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
+        # gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
+        gpu_options = tf.GPUOptions(allow_growth=True)
+        
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         # self.sess.gpu_options.allow_growth = True
         # new_graph = tf.Graph()
@@ -387,6 +390,7 @@ class SAC(object):
         self.saver = tf.train.Saver()
         self.path = '/home/yue/yuetin/collision_surrouding/src/Collision_Avoidance/train/weights/'+ NAME +'/'+ self.name
 
+        
         self.sess.run(tf.global_variables_initializer())
         self.sess.run(target_init)
 

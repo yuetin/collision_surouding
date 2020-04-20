@@ -285,7 +285,8 @@ bool BaseModule::set_goal_callback(train::set_goal::Request &req, train::set_goa
   {
     dis = drl_Kinematics_->manipulator_link_data_[i]->train_limit_max_ - drl_Kinematics_->manipulator_link_data_[i]->train_limit_min_;
     mu = (drl_Kinematics_->manipulator_link_data_[i]->train_limit_max_ + drl_Kinematics_->manipulator_link_data_[i]->train_limit_min_)/2;
-    req.action[i] = req.action[i] * fabs(dis) + (mu - req.action[8]*fabs(dis)/2);
+    // req.action[i] = req.action[i] * fabs(dis) + (mu - req.action[8]*fabs(dis)/2);
+    req.action[i] = (req.action[i] * fabs(dis) + mu) * req.action[8];
   }
   drl_Kinematics_->manipulator_link_data_[0]->slide_position_ = req.action[0];
   
@@ -365,7 +366,8 @@ bool BaseModule::set_start_callback(train::set_start::Request &req, train::set_s
   {
     dis = drl_Kinematics_->manipulator_link_data_[i]->train_limit_max_ - drl_Kinematics_->manipulator_link_data_[i]->train_limit_min_;
     mu = (drl_Kinematics_->manipulator_link_data_[i]->train_limit_max_ + drl_Kinematics_->manipulator_link_data_[i]->train_limit_min_)/2;
-    req.action[i] = req.action[i] * fabs(dis) + (mu - req.action[8]*fabs(dis)/2);
+    // req.action[i] = req.action[i] * fabs(dis) + (mu - req.action[8]*fabs(dis)/2);
+    req.action[i] = (req.action[i] * fabs(dis) + mu) * req.action[8];
   }
   drl_Kinematics_->manipulator_link_data_[0]->slide_position_ = req.action[0];
   for (int i=1; i<=MAX_JOINT_ID; i++)

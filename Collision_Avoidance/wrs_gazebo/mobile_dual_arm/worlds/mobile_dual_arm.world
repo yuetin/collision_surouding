@@ -139,7 +139,7 @@
         <visual name='visual'>
           <geometry>
             <box>
-              <size>1 2 0.69</size>
+              <size>1 2 0.65</size>
             </box>
           </geometry>
           <material>
@@ -165,14 +165,14 @@
           <pose frame=''>0 0 0 0 -0 0</pose>
           <geometry>
             <box>
-              <size>1 2 0.69</size>
+              <size>1 2 0.65</size>
             </box>
           </geometry>
           <surface>
             <friction>
               <ode>
-                <mu>1</mu>
-                <mu2>1</mu2>
+                <mu>100</mu>
+                <mu2>100</mu2>
                 <fdir1>0 0 0</fdir1>
                 <slip1>0</slip1>
                 <slip2>0</slip2>
@@ -236,7 +236,7 @@
 
 
       </link>
-      <static>0</static>
+      <static>1</static>
       <allow_auto_disable>1</allow_auto_disable>
       <pose frame=''>0.55 0 0.345 0 0 0</pose>
     </model>
@@ -248,12 +248,13 @@
       <inertial>
         <mass>1</mass>
         <inertia>
-          <ixx>0.166667</ixx>
+          <ixx>10</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.166667</iyy>
+          <iyy>10</iyy>
           <iyz>0</iyz>
-          <izz>0.166667</izz>
+          <izz>10</izz>
+          <!-- 0.166667 -->
         </inertia>
         <pose frame=''>0 0 0 0 -0 0</pose>
       </inertial>
@@ -261,7 +262,7 @@
       <enable_wind>0</enable_wind>
       <kinematic>0</kinematic>
       <pose frame=''>0 0 0 0 -0 0</pose>
-      <gravity>1</gravity>
+      <gravity>true</gravity>
       <visual name='visual'>
         <geometry>
           <box>
@@ -297,8 +298,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>100</mu>
+              <mu2>100</mu2>
               <fdir1>0 0 0</fdir1>
               <slip1>0</slip1>
               <slip2>0</slip2>
@@ -365,15 +366,16 @@
 
 
     </link>
-    
+<!--     
       <plugin name="base_controller" filename="libgazebo_ros_planar_move.so">
         <commandTopic>cmd_vel</commandTopic>
         <odometryTopic>odom</odometryTopic>
         <odometryFrame>/odom</odometryFrame>
         <odometryRate>100.0</odometryRate>
         <robotBaseFrame>link</robotBaseFrame>
+        
+      </plugin> -->
         <!-- <broadcastTF>true</broadcastTF> -->
-      </plugin>
    
   <static>0</static>
   <allow_auto_disable>1</allow_auto_disable>

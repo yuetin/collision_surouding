@@ -22,6 +22,7 @@ import math
 import random
 import time
 from train.srv import get_state, move_cmd, set_goal, set_start
+from train.msg import aa_box_pos_msg
 from CheckCollision_v1 import CheckCollision
 from gazebo_msgs.msg import ModelState
 from std_msgs.msg import String
@@ -53,10 +54,10 @@ class Test(core.Env):
     def __init__(self, name, workers):
         self.__name = self.NAME[name%2]
         self.__obname = self.NAME[name%2 + 1]
-        if workers == 0:
-            self.workers = 'arm'
-        else:
-            self.workers = str(workers)
+        # if workers == 0:
+        self.workers = 'arm'
+        # else:
+        #     self.workers = str(workers)
 
         high = np.array([1.,1.,1.,1.,1.,1.,1.,1.,  #8
                          1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,1.,     #7
@@ -118,6 +119,15 @@ class Test(core.Env):
             latch=True
         )
 
+        self.set_aabox_pub = rospy.Publisher(
+            'aa_box_pos_msg',
+            aa_box_pos_msg,
+            queue_size=1,
+            latch=True
+        )
+
+
+
         self.bridge = CvBridge()
         self.depth_dim = 76800
         self.depth_image = None
@@ -130,6 +140,8 @@ class Test(core.Env):
         self.aa_box_x = 0
         self.aa_box_y = 0
         # self.set_mode_pub.publish('set_mode')
+        
+
         rospy.Subscriber('/ir_depth/depth/image_raw',Image,self.callback )
         self.seed(345*(workers+1) + 467*(name+1))
         self.reset()
@@ -153,7 +165,14 @@ class Test(core.Env):
     # def get_aa_box_position(self,msg = None):
     #     print(msg.pose.pose.position.x)
     #     print(msg.pose.pose.position.y)
+    def aa_suck(self,data):
+        try:    
+            self.aa_box_x = data.x
+            self.aa_box_y = data.y
 
+
+        except CvBridgeError as e:
+            print(e)
 
     # def set_aa_box_vel(self, goal_x, goal_y):
         
@@ -334,6 +353,20 @@ class Test(core.Env):
         msg.reference_frame = 'world'
         self.set_model_pub.publish(msg)
 
+    def set_object2(self, name, pos, ori):
+        msg = ModelState()
+        msg.model_name = name+self.workers
+        msg.pose.position.x = pos[0]
+        msg.pose.position.y = pos[1]
+        msg.pose.position.z = pos[2]
+        msg.pose.orientation.w = ori[0]
+        msg.pose.orientation.x = ori[1]
+        msg.pose.orientation.y = ori[2]
+        msg.pose.orientation.z = ori[3]
+        msg.reference_frame = 'world'
+        self.set_model_pub.publish(msg)
+
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -352,7 +385,7 @@ class Test(core.Env):
         self.old, self.joint_pos[:15], self.joint_angle = np.array(res.state), res.joint_pos, res.joint_angle
         self.limit, self.goal_quat, self.quat_inv, self.joint_pos[15:30] = res.limit, res.quaterniond, res.quat_inv, res_.joint_pos
         linkPosM, linkPosS = self.collision_init()
-        _, Link_dis = self.cc.checkCollision(linkPosM, linkPosS)
+        alarm, Link_dis = self.cc.checkCollision(linkPosM, linkPosS)
         s = np.append(self.old[:3], np.subtract(self.goal[:3], self.old[:3]))
         s = np.append(s, Link_dis)
         s = np.append(s, self.joint_angle)
@@ -398,12 +431,20 @@ class Test(core.Env):
         # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         # print(self.images_)
         # time.sleep(1)
-        aabox_X = random.uniform(0.08,0.5)
-        aabox_Y = random.uniform(-0.5,0.5)
-        self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
-        self.set_object('aa_box', (aabox_X,aabox_Y,0.8), (0, 0, 0, 0))
+        if self.__name == '/right_':
+            self.aa_box_x = random.uniform(0.1,0.3)
+            self.aa_box_y = random.uniform(-0.5,0.5)
+            self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
+            self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
+            aa_box = aa_box_pos_msg()
+            aa_box.x = 1.
+            aa_box.y = 2.
+            self.set_aabox_pub.publish(aa_box)
+            # rospy.Publisher('aa_box_pos',self.aa_box_x,)
+            # print(self.aa_box_x,"III",self.aa_box_x,self.aa_box_y)
+
         self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
-        
+            
         print("aaa")
         print(self.img_suckkkkkkkkkkkkk.shape)
         print("bbb")
@@ -413,7 +454,8 @@ class Test(core.Env):
         return self.state , self.img_suckkkkkkkkkkkkk
 
     def set_goal(self):
-        self.goal = self.np_random.uniform(low=0., high=self.range_cnt, size=(8,))
+        self.goal = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
+        # self.goal[1] = self.np_random.uniform(low=0., high=0.5)
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # print('self.goal = ', self.goal)
         # if self.goal[0]>0.5:
@@ -435,7 +477,7 @@ class Test(core.Env):
             return goal_pos[:7], res.joint_angle, res.joint_pos, res_.joint_pos
 
     def set_old(self):
-        self.start = self.np_random.uniform(low=0., high=self.range_cnt, size=(8,))
+        self.start = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # if self.start[0]>0.5:
         #     if self.start[0]>0.75:
@@ -519,13 +561,19 @@ class Test(core.Env):
         if (not self.collision) and math.fabs(s[7])<0.9:
             self.state = s
 
+        # rospy.Subscriber('aa_box_pos_msg',float32,self.aa_suck)
+        # print(self.aa_box_x,"III",self.aa_box_y)
+        # if self.__name == '/right_':
+        #     self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
+        #     self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
+            
         ## see
         # if self.workers == 'arm':
         #     if self.object_pub == 0:
-        #         self.set_object(self.__name, (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), (0, 0, 0, 0))
+        #         self.set_object2(self.__name, (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), (0, 0, 0, 0))
         #         self.object_pub = 1
         #     else:
-        #         self.set_object(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])
+        #         self.set_object2(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])
         #         self.object_pub = 0
         fail = False
         if not res.success or self.collision or res.singularity:
@@ -563,15 +611,17 @@ class Test(core.Env):
         reward = 0.
 
         if not ik_success:
-            return -20
+            return -5
         if self.collision:
-            return -20
+            return -5
         if math.fabs(s[7])>0.9:
-            return -10
+            return -5
 
+        if terminal:
+            return 3
         reward -= self.dis_pos
         reward -= self.dis_ori
-        reward += 0.4
+        reward += 0.5
         
         if reward > 0:
             reward *= 2
@@ -579,9 +629,9 @@ class Test(core.Env):
         cos_vec = np.dot(self.action[:3],  self.state[8:11])/(np.linalg.norm(self.action[:3]) *np.linalg.norm(self.state[8:11]))
         
         reward += (cos_vec*self.dis_pos - self.dis_pos)/8
-        reward -= 1.8
+        reward -= 2
         if singularity:
-            reward -= 10
+            reward -= 3
         return reward
         #==================================================================================
 

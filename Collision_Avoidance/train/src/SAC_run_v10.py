@@ -8,14 +8,14 @@ import numpy as np
 import math
 import rospy
 import tensorflow as tf
-from sac_v16 import SAC
-from env_v23 import Test
+from sac_v17 import SAC
+from env_v24 import Test
 from manipulator_h_base_module_msgs.msg import P2PPose
 
 MAX_EPISODES = 100000
 MAX_EP_STEPS =  600
 MEMORY_CAPACITY = 10000
-BATCH_SIZE = 512
+BATTH_SIZE = 4
 SIDE = ['right_', 'left_']
 SIDE_ = ['R', 'L']
 GOAL_REWARD = 800
@@ -25,9 +25,10 @@ COUNTER = [1, 1]
 TRAIN_CNT = [0, 0]
 EP = [0, 0]
 WORKS = 1
-SUCCESS_ARRAY = np.zeros([2,500])
-GOAL_RATE = [40, 40]
+SUCCESS_ARRAY = np.zeros([2,300])
+GOAL_RATE = [10, 10]
 ACTION_FLAG = [False, False]
+ep_goal = [10,10]
 
 def worker(name, workers, agent):
     global SUCCESS_ARRAY, ACTION_FLAG, SAVE, COUNTER, EP
@@ -59,31 +60,42 @@ def worker(name, workers, agent):
         done_arr = []
 
         img_arr = []
-        s = []
-        s = env.reset()
+        imgex_arr = []
+        s, depth = env.reset()
+        # print(s.shape)
+        # print(depth.shape)
         
         ep_reward = 0
         success_cnt = 0
         done_cnt = 0
         EP[name] += 1
         ep = EP[name]
-        SUCCESS_ARRAY[name, ep%500] = 0.
+        SUCCESS_ARRAY[name, ep%300] = 0.
         # COLLISION = False
         first_fail = True
         for j in range(MAX_EP_STEPS):
             WORKER_EVENT[name].wait()
-            # s = s.tolist()
-            a = agent.choose_action(s)
+            a = agent.choose_action(s, depth)
+            # print("cccccccccccccccccccccc")
             rd = np.random.rand()
             a *= (rd*3+0.5)
-            s_, r, done, success, fail = env.step(a)
+            
+            s_, r, done, success, fail, succcccccccccccccckkkkk = env.step(a)
+            # print("cccccccccccccccccccccc")
+            # print(succcccccccccccccckkkkk.shape)
             # , succcccccccccccccckkkkk
             if j>10:
                 s_arr.append(s)
+                # print(len(s_arr))
+                imgex_arr.append(depth)
+                # list_shape = np.array(depth).shape
+                # print(list_shape)
                 a_arr.append(a)
                 r_arr.append(r)
                 s__arr.append(s_)
-                # img_arr.append(succcccccccccccccckkkkk)
+                img_arr.append(succcccccccccccccckkkkk)
+                # list_shape = np.array(img_arr).shape
+                # print(list_shape)
                 done_arr.append(done)
                 # agent.replay_buffer[workers].store_transition(s, a, r, s_, done)
                 # if fail:
@@ -104,7 +116,7 @@ def worker(name, workers, agent):
             ep_reward += r
 
             COUNTER[name]+=1
-            if COUNTER[name] >= BATCH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
+            if COUNTER[name] >= BATTH_SIZE*200 and COUNTER[name]%(80) == 0:
                 WORKER_EVENT[name].clear()
                 for _ in range(2+int(ep/1000)):
                     agent.learn(TRAIN_CNT[name])
@@ -114,31 +126,34 @@ def worker(name, workers, agent):
                 # LEARN_EVENT[name].set()
             if success_cnt > 10:
                 # if not COLLISION:
-                SUCCESS_ARRAY[name, ep%500] = 1.
+                SUCCESS_ARRAY[name, ep%300] = 1.
                 break
             # if done_cnt-success_cnt > 100:
             #     break
         
         for i in range(len(s_arr)):
-            agent.replay_buffer[workers].store_transition(s_arr[i], a_arr[i], r_arr[i], s__arr[i], done_arr[i])
+            agent.replay_buffer[workers].store_transition(s_arr[i], imgex_arr[i], a_arr[i], r_arr[i], s__arr[i], img_arr[i], done_arr[i])
         s_arr.clear()
         a_arr.clear()
         r_arr.clear()
         s__arr.clear()
         done_arr.clear()
-       
+        img_arr.clear()
+        imgex_arr.clear()
 
         SUCCESS_RATE = 0
         for z in SUCCESS_ARRAY[name]:
-            SUCCESS_RATE += z/5
+            SUCCESS_RATE += z/3
         if SUCCESS_RATE >= GOAL_RATE[name]:
+        # if ep >= ep_goal[name]:
             SAVE[name] = True
+            
         else:
             SAVE[name] = False
         agent.replay_buffer[workers].store_eprwd(ep_reward*j/100)
         
         if workers == 0 and SAVE[name]:
-            SUCCESS_ARRAY[name] = np.zeros([500])
+            SUCCESS_ARRAY[name] = np.zeros([300])
             save(agent, name)
             print('Running time: ', time.time() - t1)
         if env.is_success:
@@ -151,14 +166,22 @@ def save(agent, name):
     if os.path.isdir(agent.path+str(GOAL_RATE[name])): shutil.rmtree(agent.path+str(GOAL_RATE[name]))
     os.mkdir(agent.path+str(GOAL_RATE[name]))
     ckpt_path = os.path.join(agent.path+str(GOAL_RATE[name]), 'SAC.ckpt')
+    # if os.path.isdir(agent.path+str(ep_goal[name])): shutil.rmtree(agent.path+str(ep_goal[name]))
+    # os.mkdir(agent.path+str(ep_goal[name]))
+    # ckpt_path = os.path.join(agent.path+str(ep_goal[name]), 'SAC.ckpt')
+
     save_path = agent.saver.save(agent.sess, ckpt_path, write_meta_graph=False)
     print("\nSave Model %s\n" % save_path)
     if GOAL_RATE[name] < 90:
         GOAL_RATE[name] += 5
     else:
         GOAL_RATE[name] += 2
-    if GOAL_RATE[name] > 100:
-        COORD.request_stop()
+    # if ep_goal[name] < 90:
+    #     ep_goal[name] += 20
+    # else:
+    #     ep_goal[name] += 5
+    # if GOAL_RATE[name] > 100:
+    #     COORD.request_stop()
 
 def train(name):
     global SAVE, COUNTER, RUN_FLAG
