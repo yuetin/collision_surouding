@@ -2,7 +2,8 @@ import numpy as np
 import tensorflow as tf
 import gym
 import random
-NAME = 'SAC_v15_3'
+import sys
+NAME = 'SAC_v15_5'
 # SAC_v14_6 is the best no fail
 # SAC_v14_7 1024 and last is 512 no fail
 # SAC_v14_8 all of 512 has fail
@@ -22,6 +23,12 @@ NAME = 'SAC_v15_3'
 # SAC_v14_22 change reward
 # SAC_v14_23 no no fail
 # SAC_v14_24 bigger network
+import warnings
+ 
+
+from models import *
+
+
 EPS = 1e-8
 LOAD = False
 # BATCH_SIZE = 512
@@ -78,16 +85,21 @@ class ValueNetwork(object):
 
         with tf.variable_scope(self.name):
             ## cnn test
+
+            # Value_cnn = fuck()
+            # input_x_images=tf.reshape(depth,[-1,320,240,1])
+            # input_x_images=tf.image.resize(input_x_images,(224,224),method=0)
+            # img_input = Value_cnn.deepnn(input_x_images)
             Value_cnn = FUCK_CNNNETWORK()
             img_cnn_input = depth
             img_input = Value_cnn.fuck_cnn(img_cnn_input)
             fc_input = tf.concat([obs, img_input], axis=1)
 
-            h1 = tf.layers.dense(fc_input, 512, tf.nn.leaky_relu, name='h1')
+            h1 = tf.layers.dense(fc_input, 1024, tf.nn.leaky_relu, name='h1')
             h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
             h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 512, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 512, tf.nn.leaky_relu, name='h5')
+            h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
             value = tf.layers.dense(h5, 1)
             value = tf.squeeze(value, axis=1)
             return value
@@ -105,6 +117,12 @@ class QValueNetwork(object):
     def step(self, obs, action, depth, reuse):
         with tf.variable_scope(self.name, reuse=reuse):
 
+            # QValue_cnn = FUCK_CNNNETWORK()
+            # input_x_images=tf.reshape(depth,[-1,320,240,1])
+            # input_x_images=tf.image.resize(input_x_images,(224,224),method=0)
+            # img_input = QValue_cnn.deepnn(input_x_images)
+
+
             QValue_cnn = FUCK_CNNNETWORK()
             img_cnn_input = depth
             img_input = QValue_cnn.fuck_cnn(img_cnn_input)
@@ -113,11 +131,11 @@ class QValueNetwork(object):
 
 
             input = tf.concat([obs, action, img_input], axis=1)
-            h1 = tf.layers.dense(input, 512, tf.nn.leaky_relu, name='h1')
+            h1 = tf.layers.dense(input, 1024, tf.nn.leaky_relu, name='h1')
             h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
             h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 512, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 512, tf.nn.leaky_relu, name='h5')
+            h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
             q_value = tf.layers.dense(h5, 1)
             q_value = tf.squeeze(q_value, axis=1)
             return q_value
@@ -135,18 +153,24 @@ class ActorNetwork(object):
     def step(self, obs, depth, log_std_min=-20, log_std_max=2):
         with tf.variable_scope(self.name, reuse=tf.AUTO_REUSE):
 
+            # Actor_cnn = FUCK_CNNNETWORK()
+            # input_x_images=tf.reshape(depth,[-1,320,240,1])
+            # input_x_images=tf.image.resize(input_x_images,(224,224),method=0)
+            # img_input = Actor_cnn.deepnn(input_x_images)
+
+
             Actor_cnn = FUCK_CNNNETWORK()
             img_cnn_input = depth
             img_input = Actor_cnn.fuck_cnn(img_cnn_input)
             print("111111111111111111111111111111111111111111")
             fc_input = tf.concat([obs, img_input], axis=1)
             print("2222222222222222222222222222222222222222222")
-            h1 = tf.layers.dense(fc_input, 512, tf.nn.leaky_relu, name='h1')
+            h1 = tf.layers.dense(fc_input, 1024, tf.nn.leaky_relu, name='h1')
             print("333333333333333333333333333333333333333333333")
             h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
             h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 512, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 512, tf.nn.leaky_relu, name='h5')
+            h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
             mu = tf.layers.dense(h5, self.act_dim, None, name='mu')
             log_std = tf.layers.dense(h5, self.act_dim, tf.tanh, name='log_std')
             log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1)
@@ -177,6 +201,7 @@ class ActorNetwork(object):
 
 class   FUCK_CNNNETWORK(object):
     def __init__(self):
+        
         pass
         
         
@@ -190,13 +215,13 @@ class   FUCK_CNNNETWORK(object):
         conv1=tf.layers.conv2d(
         inputs=input_x_images,
         filters=64,
-        kernel_size=[5,5],
+        kernel_size=[7,7],
         strides=1,
         padding='same',
         activation=tf.nn.relu
         )
         # print(conv1)
-
+        conv1=tf.layers.batch_normalization(conv1,training=True)
 
         ## 池化層 1  
         pool1=tf.layers.max_pooling2d(
@@ -215,6 +240,7 @@ class   FUCK_CNNNETWORK(object):
         padding='same',
         activation=tf.nn.relu
         )   
+        conv2=tf.layers.batch_normalization(conv2,training=True)
 
         pool2=tf.layers.max_pooling2d(
         inputs=conv2,
@@ -231,6 +257,7 @@ class   FUCK_CNNNETWORK(object):
         padding='same',
         activation=tf.nn.relu
         )   
+        conv3=tf.layers.batch_normalization(conv3,training=True)
 
         pool3=tf.layers.max_pooling2d(
         inputs=conv3,
@@ -247,6 +274,7 @@ class   FUCK_CNNNETWORK(object):
         padding='same',
         activation=tf.nn.relu
         )   
+        conv4=tf.layers.batch_normalization(conv4,training=True)
 
         pool4=tf.layers.max_pooling2d(
         inputs=conv4,
@@ -258,7 +286,7 @@ class   FUCK_CNNNETWORK(object):
         # flat=tf.reshape(pool3,[-1,4*3*32])
         dense_cnn=tf.layers.dense(
         inputs=flat,
-        units=1024,
+        units=2048,
         activation=tf.nn.relu
         )
 
@@ -285,6 +313,10 @@ class   FUCK_CNNNETWORK(object):
         # inputs=dropout,
         # units=10
         # )       
+
+
+        # return x
+
 class SAC(object):
     def __init__(self, act_dim, obs_dim, depth_dim, lr_actor, lr_value, gamma, tau, buffers, alpha=0.2, name=None, seed=1):
         # tf.reset_default_graph()
@@ -312,6 +344,12 @@ class SAC(object):
             b = ReplayBuffer(capacity=int(1e4), name=self.name+'buffer'+str(i))
             self.replay_buffer.append(b)
 
+        ##resnet
+        # X_train, Y_train, X_test, Y_test = process_orig_datasets(orig_data)
+        # m, H_size, W_size, C_size = X_train.shape
+        self.X = tf.placeholder(tf.float32, shape=(None, 224, 224, 1), name='X')
+
+
         self.OBS0 = tf.placeholder(tf.float32, [None, self.obs_dim], name=self.name+"observations0")
         self.OBS1 = tf.placeholder(tf.float32, [None, self.obs_dim], name=self.name+"observations1")
         self.ACT = tf.placeholder(tf.float32, [None, self.act_dim], name=self.name+"action")
@@ -336,9 +374,9 @@ class SAC(object):
 
         mu, self.pi, logp_pi = policy.evaluate(self.OBS0 , self.DEPTH0)
 
-        q_value1 = q_value_net_1.get_q_value(self.OBS0, self.ACT, self.DEPTH0, reuse=False)
+        q_value1 = q_value_net_1.get_q_value(self.OBS0, self.ACT, self.DEPTH0, reuse=False)  ##False
         q_value1_pi = q_value_net_1.get_q_value(self.OBS0, self.pi, self.DEPTH0, reuse=True)
-        q_value2 = q_value_net_2.get_q_value(self.OBS0, self.ACT, self.DEPTH0, reuse=False)
+        q_value2 = q_value_net_2.get_q_value(self.OBS0, self.ACT, self.DEPTH0, reuse=False) ##False
         q_value2_pi = q_value_net_2.get_q_value(self.OBS0, self.pi, self.DEPTH0, reuse=True)
         # value = value_net.get_value(self.OBS0)
 

@@ -22,13 +22,17 @@ import math
 import random
 import time
 from train.srv import get_state, move_cmd, set_goal, set_start
+from train.msg import aa_box_pos
 # from train import aa_box_pos_msg
 from CheckCollision_v1 import CheckCollision
 from gazebo_msgs.msg import ModelState
-from std_msgs.msg import String
+from std_msgs.msg import String,Float32MultiArray
 # from CheckCollision_tensor import CheckCollision
 # from vacuum_cmd_msg.srv import VacuumCmd
 import cv2
+
+
+
 
 from cv_bridge import CvBridge, CvBridgeError
 from cv_bridge.boost.cv_bridge_boost import getCvType
@@ -119,12 +123,12 @@ class Test(core.Env):
             latch=True
         )
 
-        # self.set_aabox_pub = rospy.Publisher(
-        #     'aa_box_pos_msg',
-        #     aa_box_pos_msg,
-        #     queue_size=1,
-        #     latch=True
-        # )
+        self.set_aabox_pub = rospy.Publisher(
+            'aa_box_pos',
+            aa_box_pos,
+            queue_size=1,
+            latch=True
+        )
 
 
 
@@ -152,6 +156,17 @@ class Test(core.Env):
         # rospy.Subscriber("odom", Odometry,self.get_aa_box_position)
         # rospy.Subscriber("/bumper",ContactsState,self.Sub_Bumper)
     
+        self.arm_move = rospy.Publisher(
+            self.__name + 'arm_move',
+            Float32MultiArray,
+            queue_size=1,
+            latch=True
+            )
+        
+
+
+
+
     @property
     def is_success(self):
         return self.done
@@ -200,80 +215,6 @@ class Test(core.Env):
         except CvBridgeError as e:
             print(e)
 
-# # cv2.destroyAllWindows()
-
-#     def image_client(self):
-
-#         # rospy.init_node('depth_image',anonymous=True)
-#         print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-#         rospy.Subscriber('ir_depth/depth/image_raw',Image,self.callback )
-        # rospy.Subscriber('/camera/rgb/image_raw',Image,self.callback )
-        
-        # rospy.spin()
-
-
-    ##bumper gazebo
- 
-    # def Sub_Bumper(self,msg = None):
-    #     while msg is None and not rospy.is_shutdown():
-    #         try:
-    #             # msg = rospy.wait_for_message("/bumper", ContactsState)
-    #             msg = rospy.wait_for_message("/bumper", ContactsState, timeout=1.)
-    #         except:
-    #             print("don't listen bumper")
-
-    #     if(len(msg.states)):
-    #         for state in msg.states:
-    #             if(self.__robot in state.info):
-    #                 self.__bumper = True
-    #                 print("fuckkkk")
-    #             # else:
-    #                 # print("aaa")
-
-    # def Check_Connection(self):
-    #     init = None
-    #     # while init is None and not rospy.is_shutdown():
-    #     #     try:
-    #     #         init = rospy.wait_for_message("/scan", LaserScan, timeout=1.0)
-    #     #     except:
-    #     #         print('scan not init')
-        
-    #     # init = None
-    #     while init is None and not rospy.is_shutdown():
-    #         try:
-    #             init = rospy.wait_for_message("/bumper", ContactsState, timeout=1.0)
-    #         except:
-    #             print('bumper not init')
-
-    #     # print('init success nh')
-    #     return True
-    
-
-    # CNN
-    # def build_cnnlayer(self, conv_in, net_name):
-    #     # build conv layer
-    #     conv_out = None
-    #     for key in sorted(cfg[net_name]):
-    #         com = cfg[net_name][key]        #component
-    #         if com['type'] in 'conv':
-    #             stride = com['stride']
-    #             conv_out = Conv2D(conv_in, com['kernel_size'], com['out_channel'], name_prefix=net_name+'_'+key, strides=[1, stride, stride, 1])
-    #             conv_in  = conv_out
-    #             if 'spatial_softmax' in com:
-    #                 self.logger.debug('Last_conv.shape = {}'.format(conv_in.shape))
-    #                 conv_out = tf.contrib.layers.spatial_softmax(conv_in, name='spatial_softmax')
-        
-    #     # print(conv_out.shape)
-    #     # if don't have spatial softmax need to flatten
-    #     if len(conv_out.shape) > 2:
-    #         conv_out = Flaten(conv_out)
-
-    #     return conv_out
-
-
-    # def _save_img(self, img_buffer, img_):
-
-        
 
 
     def get_state_client(self, name):
@@ -436,11 +377,11 @@ class Test(core.Env):
             self.aa_box_y = random.uniform(-0.5,0.5)
             self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
             self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
-            # aa_box = aa_box_pos_msg()
-            # aa_box.x = 1.
-            # aa_box.y = 2.
-            # self.set_aabox_pub.publish(aa_box)
-            # rospy.Publisher('aa_box_pos',self.aa_box_x,)
+            aa_box = aa_box_pos()
+            aa_box.x = self.aa_box_x
+            aa_box.y = self.aa_box_y
+            self.set_aabox_pub.publish(aa_box)
+            # rospy.Publisher('aa_box_pos',aa_box_pos)
             # print(self.aa_box_x,"III",self.aa_box_x,self.aa_box_y)
 
         self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
@@ -527,7 +468,12 @@ class Test(core.Env):
         self.image_input = np.reshape(self.images_,-1)
         # print(self.image_input.shape)
         # print(self.image_cnn[10])
-        
+        # if self.__name == '/right_':
+        aaaarmmm = Float32MultiArray()
+        aaaarmmm.data =  self.cmd
+        self.arm_move.publish(aaaarmmm)
+
+
         suck = np.append(suck, self.image_input)
 
         if res.success:
@@ -552,7 +498,11 @@ class Test(core.Env):
             # print(s.shape)
 
 
-
+        rospy.Subscriber('aa_box_pos',aa_box_pos,self.aa_suck)
+        # print(self.aa_box_x,"III",self.aa_box_y)
+        # if self.__name == '/right_':
+        self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
+        self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
             # print(suck)
             # print(s)
         terminal = self._terminal(s, res.success, alarm)
@@ -611,16 +561,16 @@ class Test(core.Env):
         reward = 0.
 
         if not ik_success:
-            return -5
+            return -20
         if self.collision:
-            return -5
+            return -20
         if math.fabs(s[7])>0.9:
-            return -5
+            return -20
 
         if terminal:
-            return 3
-        reward -= self.dis_pos*5
-        reward -= self.dis_ori*5
+            return 300
+        reward -= self.dis_pos
+        reward -= self.dis_ori
         reward += 0.5
         
         if reward > 0:
