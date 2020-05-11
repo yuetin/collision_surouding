@@ -386,9 +386,9 @@ class Test(core.Env):
 
         self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
             
-        print("aaa")
-        print(self.img_suckkkkkkkkkkkkk.shape)
-        print("bbb")
+        # print("aaa")
+        # print(self.img_suckkkkkkkkkkkkk.shape)
+        # print("bbb")
         self.collision = False
         self.done = False
         self.success = False
@@ -516,7 +516,9 @@ class Test(core.Env):
         # if self.__name == '/right_':
         #     self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
         #     self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
-            
+        # linkPosM, linkPosS = self.collision_init()
+        # alarm, Link_dis = self.cc.checkCollision(linkPosM, linkPosS)
+
         ## see
         # if self.workers == 'arm':
         #     if self.object_pub == 0:
@@ -538,6 +540,7 @@ class Test(core.Env):
             alarm_cnt += i
         if alarm_cnt>0.4:
             self.collision = True
+
         if ik_success and not self.collision:
             if self.dis_pos < self.goal_err and self.dis_ori < self.ori_err:
                 self.success = True
@@ -561,25 +564,29 @@ class Test(core.Env):
         reward = 0.
 
         if not ik_success:
+            # reward -= 10.
             return -20
+
         if self.collision:
+            # reward -= 20000
             return -20
         if math.fabs(s[7])>0.9:
-            return -20
+            # reward -= 10.
+            return -10
 
-        if terminal:
-            return 300
-        reward -= self.dis_pos
+        # if terminal:
+        #     return 300
+        reward -= self.dis_pos*3
         reward -= self.dis_ori
-        reward += 0.5
+        # reward += 0.5
         
-        if reward > 0:
-            reward *= 2
+        # if reward > 0:
+        #     reward *= 2
 
-        cos_vec = np.dot(self.action[:3],  self.state[8:11])/(np.linalg.norm(self.action[:3]) *np.linalg.norm(self.state[8:11]))
+        # cos_vec = np.dot(self.action[:3],  self.state[8:11])/(np.linalg.norm(self.action[:3]) *np.linalg.norm(self.state[8:11]))
         
-        reward += (cos_vec*self.dis_pos - self.dis_pos)/8
-        reward -= 2
+        # reward += (cos_vec*self.dis_pos - self.dis_pos)/8
+        reward -= 1
         if singularity:
             reward -= 3
         return reward

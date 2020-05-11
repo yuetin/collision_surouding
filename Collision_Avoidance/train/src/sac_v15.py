@@ -3,26 +3,8 @@ import tensorflow as tf
 import gym
 import random
 import sys
-NAME = 'SAC_v15_5'
-# SAC_v14_6 is the best no fail
-# SAC_v14_7 1024 and last is 512 no fail
-# SAC_v14_8 all of 512 has fail
-# SAC_v14_9 all of 1024 has fail
-# SAC_v14_10 512 and last is 1024 has fail
-# SAC_v14_11 all of 512 no fail
-# SAC_v14_12 all of 512 has fail
-# SAC_v14_13 all of 512 has fail change rand place
-# SAC_v14_14 all of 512 has fail no rand
-# SAC_v14_15 all of 512 has fail has rand joint3 =0
-# SAC_v14_16 range_cnt += 0.001 and the same
-# SAC_v14_17 range_cnt max 0.95 -> 0.85 and the same
-# SAC_v14_18 change kinematics and singularity reward and the same
-# SAC_v14_19 change random been
-# SAC_v14_20 change cos reward
-# SAC_v14_21 no cube
-# SAC_v14_22 change reward
-# SAC_v14_23 no no fail
-# SAC_v14_24 bigger network
+NAME = 'SAC_v15_6'
+
 import warnings
  
 
@@ -32,7 +14,7 @@ from models import *
 EPS = 1e-8
 LOAD = False
 # BATCH_SIZE = 512
-BATCH_SIZE = 4
+BATCH_SIZE = 32
 SEED = [123, 321]
 class ReplayBuffer(object):
     def __init__(self, capacity, name):
@@ -98,9 +80,9 @@ class ValueNetwork(object):
             h1 = tf.layers.dense(fc_input, 1024, tf.nn.leaky_relu, name='h1')
             h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
             h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
-            value = tf.layers.dense(h5, 1)
+            # h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            # h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
+            value = tf.layers.dense(h3, 1)
             value = tf.squeeze(value, axis=1)
             return value
 
@@ -134,9 +116,9 @@ class QValueNetwork(object):
             h1 = tf.layers.dense(input, 1024, tf.nn.leaky_relu, name='h1')
             h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
             h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
-            q_value = tf.layers.dense(h5, 1)
+            # h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            # h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
+            q_value = tf.layers.dense(h3, 1)
             q_value = tf.squeeze(q_value, axis=1)
             return q_value
 
@@ -162,17 +144,14 @@ class ActorNetwork(object):
             Actor_cnn = FUCK_CNNNETWORK()
             img_cnn_input = depth
             img_input = Actor_cnn.fuck_cnn(img_cnn_input)
-            print("111111111111111111111111111111111111111111")
             fc_input = tf.concat([obs, img_input], axis=1)
-            print("2222222222222222222222222222222222222222222")
             h1 = tf.layers.dense(fc_input, 1024, tf.nn.leaky_relu, name='h1')
-            print("333333333333333333333333333333333333333333333")
             h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
             h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
-            mu = tf.layers.dense(h5, self.act_dim, None, name='mu')
-            log_std = tf.layers.dense(h5, self.act_dim, tf.tanh, name='log_std')
+            # h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            # h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
+            mu = tf.layers.dense(h3, self.act_dim, None, name='mu')
+            log_std = tf.layers.dense(h3, self.act_dim, tf.tanh, name='log_std')
             log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1)
 
             std = tf.exp(log_std)
@@ -208,20 +187,21 @@ class   FUCK_CNNNETWORK(object):
         ## CNN 第一層
     def fuck_cnn(self, img_buffer):
         # arrayA = np.array(img_buffer)
-        print("aaaaaaaaaaa")
+        # print("aaaaaaaaaaa")
         # print(img_buffer)
         input_x_images=tf.reshape(img_buffer,[-1,320,240,1])
+        input_x_images=tf.image.resize(input_x_images,(128,128),method=0)
         # input_x_images = img_buffer
         conv1=tf.layers.conv2d(
         inputs=input_x_images,
         filters=64,
-        kernel_size=[7,7],
+        kernel_size=[5,5],
         strides=1,
         padding='same',
-        activation=tf.nn.relu
+        activation=tf.nn.leaky_relu
         )
         # print(conv1)
-        conv1=tf.layers.batch_normalization(conv1,training=True)
+        # conv1=tf.layers.batch_normalization(conv1,training=True)
 
         ## 池化層 1  
         pool1=tf.layers.max_pooling2d(
@@ -238,9 +218,9 @@ class   FUCK_CNNNETWORK(object):
         kernel_size=[5,5],
         strides=1,
         padding='same',
-        activation=tf.nn.relu
+        activation=tf.nn.leaky_relu
         )   
-        conv2=tf.layers.batch_normalization(conv2,training=True)
+        # conv2=tf.layers.batch_normalization(conv2,training=True)
 
         pool2=tf.layers.max_pooling2d(
         inputs=conv2,
@@ -255,9 +235,9 @@ class   FUCK_CNNNETWORK(object):
         kernel_size=[3,3],
         strides=1,
         padding='same',
-        activation=tf.nn.relu
+        activation=tf.nn.leaky_relu
         )   
-        conv3=tf.layers.batch_normalization(conv3,training=True)
+        # conv3=tf.layers.batch_normalization(conv3,training=True)
 
         pool3=tf.layers.max_pooling2d(
         inputs=conv3,
@@ -272,9 +252,9 @@ class   FUCK_CNNNETWORK(object):
         kernel_size=[3,3],
         strides=1,
         padding='same',
-        activation=tf.nn.relu
+        activation=tf.nn.leaky_relu
         )   
-        conv4=tf.layers.batch_normalization(conv4,training=True)
+        # conv4=tf.layers.batch_normalization(conv4,training=True)
 
         pool4=tf.layers.max_pooling2d(
         inputs=conv4,
@@ -282,12 +262,13 @@ class   FUCK_CNNNETWORK(object):
         strides=2
         )
         
-        flat=tf.reshape(pool4,[-1,20*15*32])
+        # flat=tf.reshape(pool4,[-1,20*15*32])
+        flat=tf.reshape(pool4,[-1,8*8*32])
         # flat=tf.reshape(pool3,[-1,4*3*32])
         dense_cnn=tf.layers.dense(
         inputs=flat,
-        units=2048,
-        activation=tf.nn.relu
+        units=1024,
+        # activation=tf.nn.leaky_relu
         )
 
         # dropout=tf.layers.dropout(
