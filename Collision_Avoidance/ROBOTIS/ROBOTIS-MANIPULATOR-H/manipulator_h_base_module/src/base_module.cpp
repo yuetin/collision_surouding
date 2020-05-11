@@ -463,25 +463,34 @@ template <typename T>
 void BaseModule::set_response_quat(T &res, Eigen::Quaterniond q)
 {
   Eigen::VectorXd Old_JointAngle(8);
-  int all_steps = 50;
+  bool setIk_success = false;
+  int all_steps = 20;
   robotis_->calc_task_tra_.resize(all_steps, 3);
 
   robotis_->calc_slide_tra_ = Eigen::MatrixXd::Zero(all_steps, 1);
   
   for (int id = 0; id <= MAX_JOINT_ID; id++)
       Old_JointAngle(id) = manipulator_->manipulator_link_data_[id]->joint_angle_;
-  bool setIk_success = robotis_->setInverseKinematics(1, all_steps, manipulator_->manipulator_link_data_[END_LINK]->orientation_,
-                                                 manipulator_->manipulator_link_data_[END_LINK]->phi_, Old_JointAngle);
+  setIk_success = robotis_->setInverseKinematics(1, all_steps, manipulator_->manipulator_link_data_[END_LINK]->orientation_, manipulator_->manipulator_link_data_[END_LINK]->phi_, Old_JointAngle);
   
   res.quaterniond.resize(8);
-  Eigen::Quaterniond goal_q;
-  goal_q.coeffs() = robotis_->ik_target_quaternion.coeffs() - q.coeffs();
+  Eigen::Quaterniond goal_q, tar_q;
+  tar_q = robotis_->ik_target_quaternion;
+  double d = q.dot(tar_q);
+  if(d<0)
+  {
+    tar_q.coeffs() *= -1;
+  }
+  goal_q.coeffs() = tar_q.coeffs() - q.coeffs();
   goal_q.coeffs() /= goal_q.norm();
   res.quaterniond[0] = goal_q.w();
   res.quaterniond[1] = goal_q.x();
   res.quaterniond[2] = goal_q.y();
   res.quaterniond[3] = goal_q.z();
-  goal_q.coeffs() = robotis_->inv_target_quaternion.coeffs() - q.coeffs();
+  tar_q = robotis_->inv_target_quaternion;
+  d = q.dot(tar_q);
+  if(d>=0) tar_q.coeffs() *= -1;
+  goal_q.coeffs() = tar_q.coeffs() - q.coeffs();
   goal_q.coeffs() /= goal_q.norm();
   res.quaterniond[4] = goal_q.w();
   res.quaterniond[5] = goal_q.x();
