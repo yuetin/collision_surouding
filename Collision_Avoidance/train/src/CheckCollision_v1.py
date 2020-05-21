@@ -17,7 +17,7 @@ class CheckCollision():
                           [0.16, 0.16, 0.14], 
                           [0.14, 0.14, 0.12]])
 
-        self.__bumper = None
+        self.__bumper = False
         self.__robot = "_arm"
         rospy.Subscriber("/bumper",ContactsState,self.Sub_Bumper)
         rospy.Subscriber("/bumper2",ContactsState,self.Sub_Bumper2)
@@ -27,8 +27,9 @@ class CheckCollision():
         PointPosNum = len(RobotLinkPos_Slave[:,1])
         LinkNum = PointPosNum - 1
         Alarm = np.zeros(LinkNum)
+        bumpalarm = np.zeros(LinkNum)
         
-        
+
         Slave2Master_Dist = np.ones((LinkNum, LinkNum-2), dtype=np.float32)*1.
         for cnt_S in range(0,LinkNum):
             for cnt_M in range(2,LinkNum):
@@ -41,9 +42,12 @@ class CheckCollision():
                                                                         RobotLinkPos_Master[cnt_M, :], RobotLinkPos_Master[cnt_M+1, :])
                 if cnt_S == 0:
                     RobotLinkPos_Slave[cnt_S+1, 2] = tmp
-                if Slave2Master_Dist[cnt_S, cnt_M-2] < self.threshold[cnt_S, cnt_M-2]-0.02 or self.__bumper == True:
+                if Slave2Master_Dist[cnt_S, cnt_M-2] < self.threshold[cnt_S, cnt_M-2]-0.02:
                     Alarm[cnt_S] = 1
-
+                    print("fucccccccccckkkkk")
+                if  self.__bumper == True:
+                    Alarm[cnt_S] = 1
+                    print("fucccccccccckkkkk")
                     self.__bumper = False
 
         # Slave2Master_Dist = pow(self.threshold - Slave2Master_Dist + 1, 3)
@@ -134,7 +138,7 @@ class CheckCollision():
             for state in msg.states:
                 if(self.__robot in state.info):
                     self.__bumper = True
-                    print("fuckkkk")
+                    # print("fuckkkk")
                 # else:
                     # print("aaa")
 
@@ -150,7 +154,7 @@ class CheckCollision():
             for state in msg.states:
                 if(self.__robot in state.info):
                     self.__bumper = True
-                    print("fuckkkk")
+                    # print("fuckkkk")
     # def Check_Connection(self):
     #     init = None
     #     # while init is None and not rospy.is_shutdown():

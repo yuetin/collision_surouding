@@ -14,6 +14,7 @@ sys.path.insert(2, "/home/yue/yuetin/collision_surrouding/catkin_workspace/insta
 # sys.path.insert('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import numpy as np
 from DNN_v2 import *
+import gym
 from numpy import sin, cos, pi
 from gym import core, spaces
 from gym.utils import seeding
@@ -42,8 +43,7 @@ from gazebo_msgs.msg import ContactsState,ContactState
 
 # sys.path.insert(1, "/usr/local/lib/python3.5/dist-packages/")
 
-
-
+# sys.setrecursionlimit(1000000)
 class Test(core.Env):
     ACTION_VEC_TRANS = 1/180
     ACTION_ORI_TRANS = 1/60
@@ -73,10 +73,12 @@ class Test(core.Env):
                     # 
                     # joint_angle(7), 
                     # limit(1), rate(3)
+
+        gym.logger.set_level(40)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
         self.action_space = spaces.Discrete(3)
         self.act_dim=8
-        self.obs_dim=57+24
+        self.obs_dim=57+24+2
         self.state = []
         self.action = []
         self.cmd = []
@@ -102,7 +104,8 @@ class Test(core.Env):
         self.done = True
         self.s_cnt = 0
         self.goal_err = 0.08
-        self.ori_err = 0.4
+        self.ori_err = 0.3
+        # self.ori_err = 0.15
         self.quat_inv = False
         self.goal_angle = []
         self.object_pub = 0
@@ -129,7 +132,8 @@ class Test(core.Env):
         self.images_ = []
         self.aa_box_x = 0.58
         self.aa_box_y = 0.
-
+        self.dis_obstacle_1 = []
+        self.dis_obstacle_2 = []
         self.set_aabox_pub = rospy.Publisher(
             'aa_box_pos',
             aa_box_pos,
@@ -145,7 +149,7 @@ class Test(core.Env):
 
         ## image (gazebo)
 
-        rospy.Subscriber('/ir_depth/depth/image_raw',Image,self.callback)
+        # rospy.Subscriber('/ir_depth/depth/image_raw',Image,self.callback)
         # rospy.Subscriber("odom", Odometry,self.get_aa_box_position)
         # rospy.Subscriber("/bumper",ContactsState,self.Sub_Bumper)
     
@@ -233,40 +237,7 @@ class Test(core.Env):
 
 
     ##bumper gazebo
- 
-    # def Sub_Bumper(self,msg = None):
-    #     while msg is None and not rospy.is_shutdown():
-    #         try:
-    #             # msg = rospy.wait_for_message("/bumper", ContactsState)
-    #             msg = rospy.wait_for_message("/bumper", ContactsState, timeout=1.)
-    #         except:
-    #             print("don't listen bumper")
 
-    #     if(len(msg.states)):
-    #         for state in msg.states:
-    #             if(self.__robot in state.info):
-    #                 self.__bumper = True
-    #                 print("fuckkkk")
-    #             # else:
-    #                 # print("aaa")
-
-    # def Check_Connection(self):
-    #     init = None
-    #     # while init is None and not rospy.is_shutdown():
-    #     #     try:
-    #     #         init = rospy.wait_for_message("/scan", LaserScan, timeout=1.0)
-    #     #     except:
-    #     #         print('scan not init')
-        
-    #     # init = None
-    #     while init is None and not rospy.is_shutdown():
-    #         try:
-    #             init = rospy.wait_for_message("/bumper", ContactsState, timeout=1.0)
-    #         except:
-    #             print('bumper not init')
-
-    #     # print('init success nh')
-    #     return True
     
 
     # CNN
@@ -374,6 +345,22 @@ class Test(core.Env):
         msg.reference_frame = 'world'
         self.set_model_pub.publish(msg)
 
+
+    def set_object2(self, name, pos, ori):
+        msg = ModelState()
+        msg.model_name = name+self.workers
+        msg.pose.position.x = pos[0]
+        msg.pose.position.y = pos[1]
+        msg.pose.position.z = pos[2]
+        msg.pose.orientation.w = ori[0]
+        msg.pose.orientation.x = ori[1]
+        msg.pose.orientation.y = ori[2]
+        msg.pose.orientation.z = ori[3]
+        msg.reference_frame = 'world'
+        self.set_model_pub.publish(msg)
+
+
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -435,6 +422,9 @@ class Test(core.Env):
         self.state = np.append(self.state, self.dis_ori)
         self.state = np.append(self.state, self.joint_pos[6:12])
         self.state = np.append(self.state, self.goal_angle)
+
+
+
         # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         # print(self.images_)
         # self.img_suckkkkkkkkkkkkk = np.reshape(self.images_,-1)
@@ -455,24 +445,50 @@ class Test(core.Env):
             # rospy.Publisher('aa_box_pos',aa_box_pos)
             # print(self.aa_box_x,"III",self.aa_box_x,self.aa_box_y)
         
+        arm_x = 0.08
+        arm_r_y = 1
+        arm_l_y = -1
+        arm_z = -1.4125
         rospy.Subscriber('aa_box_pos',aa_box_pos,self.aa_suck)
-        self.aa_box_possition = [ self.aa_box_x+0.05, self.aa_box_y+0.05, 0.975,
-                                  self.aa_box_x+0.05, self.aa_box_y-0.05, 0.975,
-                                  self.aa_box_x-0.05, self.aa_box_y+0.05, 0.975,
-                                  self.aa_box_x-0.05, self.aa_box_y-0.05, 0.975,
-                                  self.aa_box_x+0.05, self.aa_box_y+0.05, 0.625,
-                                  self.aa_box_x+0.05, self.aa_box_y-0.05, 0.625,
-                                  self.aa_box_x-0.05, self.aa_box_y+0.05, 0.625, 
-                                  self.aa_box_x-0.05, self.aa_box_y-0.05, 0.625]     
+        if self.__name == '/right_':
+            self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z, 
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z]     
+
+        if self.__name == '/left_':
+            self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.625+arm_z,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.625+arm_z,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.625+arm_z, 
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.625+arm_z]
         self.state = np.append(self.state, self.aa_box_possition)
-                                                                 
+
+
+        aa_box_possssss = np.array([self.aa_box_x,self.aa_box_y,0.8])
+        self.dis_obstacle_1 = np.linalg.norm(aa_box_possssss[:3] - self.joint_pos[6:9])
+        self.dis_obstacle_2 = np.linalg.norm(aa_box_possssss[:3] - self.joint_pos[9:12])
+
+
+        self.state = np.append(self.state, self.dis_obstacle_1)
+        self.state = np.append(self.state, self.dis_obstacle_2)
+
+
         self.collision = False
         self.done = False
         self.success = False
         return self.state
 
     def set_goal(self):
-        self.goal = self.np_random.uniform(low=0., high=self.range_cnt, size=(8,))
+        self.goal = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
+        # self.goal[1] = self.np_random.uniform(low=0., high=0.5)
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # print('self.goal = ', self.goal)
         # if self.goal[0]>0.5:
@@ -494,7 +510,7 @@ class Test(core.Env):
             return goal_pos[:7], res.joint_angle, res.joint_pos, res_.joint_pos
 
     def set_old(self):
-        self.start = self.np_random.uniform(low=0., high=self.range_cnt, size=(8,))
+        self.start = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # if self.start[0]>0.5:
         #     if self.start[0]>0.75:
@@ -525,6 +541,7 @@ class Test(core.Env):
     def step(self, a):
         alarm = []
         Link_dis = []
+        bumpalarm = []
         s = self.state
         suck = self.image_input
 
@@ -567,21 +584,56 @@ class Test(core.Env):
             self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
             # self.image_input = np.reshape(self.images_,-1)
             # print(self.image_cnn[10])
-            self.aa_box_possition = [ self.aa_box_x+0.05, self.aa_box_y+0.05, 0.975,
-                            self.aa_box_x+0.05, self.aa_box_y-0.05, 0.975,
-                            self.aa_box_x-0.05, self.aa_box_y+0.05, 0.975,
-                            self.aa_box_x-0.05, self.aa_box_y-0.05, 0.975,
-                            self.aa_box_x+0.05, self.aa_box_y+0.05, 0.625,
-                            self.aa_box_x+0.05, self.aa_box_y-0.05, 0.625,
-                            self.aa_box_x-0.05, self.aa_box_y+0.05, 0.625, 
-                            self.aa_box_x-0.05, self.aa_box_y-0.05, 0.625]     
+            
+
+
+
+
+            arm_x = 0.08
+            arm_r_y = 1
+            arm_l_y = -1
+            arm_z = -1.4125
+            
+            if self.__name == '/right_':
+                self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z, 
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z]     
+
+            if self.__name == '/left_':
+                self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.625+arm_z,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.625+arm_z,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.625+arm_z, 
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.625+arm_z]  
+                                        
+
             s = np.append(s, self.aa_box_possition)
+            aa_box_possssss = np.array([self.aa_box_x,self.aa_box_y,0.8])
+            self.dis_obstacle_1 = np.linalg.norm(aa_box_possssss[:3] - self.joint_pos[6:9])
+            self.dis_obstacle_2 = np.linalg.norm(aa_box_possssss[:3] - self.joint_pos[9:12])
             # suck = np.append(suck, self.image_input)
 
+            s = np.append(s, self.dis_obstacle_1)
+            s = np.append(s, self.dis_obstacle_2)
             # s = np.append(s, self.image_input)
             # print(suck)
             # print(s)
+
+        
         terminal = self._terminal(s, res.success, alarm)
+        alarm_cnt = 0
+        # for i in bumpalarm:
+        #     alarm_cnt += i
+        # if alarm_cnt>0.4:
+        #     terminal = True
         reward = self.get_reward(s, res.success, terminal, res.singularity)
         # self.images_ = suck
         if (not self.collision) and math.fabs(s[7])<0.9:
@@ -589,17 +641,24 @@ class Test(core.Env):
 
 
         ## see
-        # if self.workers == 'arm':
-        #     if self.object_pub == 0:
+        if self.workers == 'arm':
+            if self.object_pub == 0:
+                self.set_object2(self.__name, (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), (0, 0, 0, 0))
+                self.object_pub = 1
+            else:
+                self.set_object2(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])
+                self.object_pub = 0
 
-        # self.set_object("aabox", (x,y,z), (0, 0, 0, 0))
-        #         self.object_pub = 1
-        #     else:
-        #         self.set_object(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])
-        #         self.object_pub = 0
         fail = False
-        if not res.success or self.collision or res.singularity:
+        # if not res.success or self.collision or res.singularity:
+        #     fail = True
+
+        alarm_cnt = 0
+        for i in alarm:
+            alarm_cnt += i
+        if alarm_cnt>0.4:
             fail = True
+
 
         return self.state, reward, terminal, self.success, fail
         # , self.images_
@@ -618,8 +677,9 @@ class Test(core.Env):
                     self.s_cnt += 1
                     self.range_cnt = self.range_cnt + 0.001 if self.range_cnt < 0.85 else 0.85 #0.004
                     self.rpy_range = self.rpy_range + 0.001 if self.rpy_range < 0.8 else 0.8 #0.002
-                    self.goal_err = self.goal_err*0.993 if self.goal_err > 0.015 else 0.015
-                    self.ori_err = self.ori_err*0.993 if self.ori_err > 0.2 else 0.2
+                    self.goal_err = self.goal_err*0.993 if self.goal_err > 0.04 else 0.04
+                    # self.goal_err = self.goal_err*0.993 if self.goal_err > 0.015 else 0.015
+                    # self.ori_err = self.ori_err*0.993 if self.ori_err > 0.2 else 0.2
                 return True
             else:
                 self.success = False
@@ -627,31 +687,51 @@ class Test(core.Env):
         else:
             self.success = False
             return False
-        
+
 
     def get_reward(self, s, ik_success, terminal, singularity):
         reward = 0.
 
-        if not ik_success:
-            return -20
+        # if not ik_success:
+        #     return -20    
+            # reward -= 20
+        reward -= self.dis_pos*10
+        reward -= self.dis_ori*2
+        
         if self.collision:
-            return -20
-        if math.fabs(s[7])>0.9:
-            return -10
+            reward -= 100
+            # reward -= 100
+            # return -100
+            # reward -= 20
+        # if math.fabs(s[7])>0.9:
+        #     return -20
+            # reward -= 10
 
-        reward -= self.dis_pos
-        reward -= self.dis_ori
-        reward += 0.4
-        
-        if reward > 0:
-            reward *= 2
 
-        cos_vec = np.dot(self.action[:3],  self.state[8:11])/(np.linalg.norm(self.action[:3]) *np.linalg.norm(self.state[8:11]))
+        if self.dis_pos < 0.04:
+            reward += 10
+            # reward += 5
+            # return 10
+
+        if self.dis_ori < 0.3:
+            reward += 10
+            # return 10
+        # reward += 0.4
+        # reward += self.dis_obstacle_1
+        # reward += self.dis_obstacle_2
+        # if reward > 0:
+        #     reward *= 2
+
+        # cos_vec = np.dot(self.action[:3],  self.state[8:11])/(np.linalg.norm(self.action[:3]) *np.linalg.norm(self.state[8:11]))
         
-        reward += (cos_vec*self.dis_pos - self.dis_pos)/8
-        reward -= 1.8
-        if singularity:
-            reward -= 10
+        # reward += (cos_vec*self.dis_pos - self.dis_pos)/8
+
+
+
+
+        # reward -= 3
+        # if singularity:
+        #     reward -= 5
         return reward
         #==================================================================================
 

@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import gym
 import random
-NAME = 'SAC_v18_1'
+NAME = 'SAC_v18_2'
 # SAC_v14_6 is the best no fail
 # SAC_v14_7 1024 and last is 512 no fail
 # SAC_v14_8 all of 512 has fail
@@ -68,12 +68,12 @@ class ValueNetwork(object):
             # img_input = Value_cnn.fuck_cnn(img_cnn_input)
             # fc_input = tf.concat([obs], axis=-1)
 
-            h1 = tf.layers.dense(obs, 512, tf.nn.leaky_relu, name='h1')
-            h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
-            h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 512, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 512, tf.nn.leaky_relu, name='h5')
-            value = tf.layers.dense(h5, 1)
+            h1 = tf.layers.dense(obs, 256, tf.nn.leaky_relu, name='h1')
+            h2 = tf.layers.dense(h1, 256, tf.nn.leaky_relu, name='h2')
+            h3 = tf.layers.dense(h2, 256, tf.nn.leaky_relu, name='h3')
+            # h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            # h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
+            value = tf.layers.dense(h3, 1)
             value = tf.squeeze(value, axis=1)
             return value
 
@@ -98,12 +98,12 @@ class QValueNetwork(object):
 
 
             input = tf.concat([obs, action], axis=-1)
-            h1 = tf.layers.dense(input, 512, tf.nn.leaky_relu, name='h1')
-            h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
-            h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 512, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 512, tf.nn.leaky_relu, name='h5')
-            q_value = tf.layers.dense(h5, 1)
+            h1 = tf.layers.dense(input, 256, tf.nn.leaky_relu, name='h1')
+            h2 = tf.layers.dense(h1, 256, tf.nn.leaky_relu, name='h2')
+            h3 = tf.layers.dense(h2, 256, tf.nn.leaky_relu, name='h3')
+            # h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            # h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
+            q_value = tf.layers.dense(h3, 1)
             q_value = tf.squeeze(q_value, axis=1)
             return q_value
 
@@ -123,17 +123,14 @@ class ActorNetwork(object):
             # Actor_cnn = FUCK_CNNNETWORK()
             # img_cnn_input = depth
             # img_input = Actor_cnn.fuck_cnn(img_cnn_input)
-            print("111111111111111111111111111111111111111111")
             # fc_input = tf.concat([obs], axis=-1)
-            print("2222222222222222222222222222222222222222222")
-            h1 = tf.layers.dense(obs, 512, tf.nn.leaky_relu, name='h1')
-            print("333333333333333333333333333333333333333333333")
-            h2 = tf.layers.dense(h1, 512, tf.nn.leaky_relu, name='h2')
-            h3 = tf.layers.dense(h2, 512, tf.nn.leaky_relu, name='h3')
-            h4 = tf.layers.dense(h3, 512, tf.nn.leaky_relu, name='h4')
-            h5 = tf.layers.dense(h4, 512, tf.nn.leaky_relu, name='h5')
-            mu = tf.layers.dense(h5, self.act_dim, None, name='mu')
-            log_std = tf.layers.dense(h5, self.act_dim, tf.tanh, name='log_std')
+            h1 = tf.layers.dense(obs, 256, tf.nn.leaky_relu, name='h1')
+            h2 = tf.layers.dense(h1, 256, tf.nn.leaky_relu, name='h2')
+            h3 = tf.layers.dense(h2, 256, tf.nn.leaky_relu, name='h3')
+            # h4 = tf.layers.dense(h3, 256, tf.nn.leaky_relu, name='h4')
+            # h5 = tf.layers.dense(h4, 256, tf.nn.leaky_relu, name='h5')
+            mu = tf.layers.dense(h3, self.act_dim, None, name='mu')
+            log_std = tf.layers.dense(h3, self.act_dim, tf.tanh, name='log_std')
             log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1)
 
             std = tf.exp(log_std)
@@ -145,6 +142,9 @@ class ActorNetwork(object):
             mu = tf.tanh(mu)
             pi = tf.tanh(pi)
 
+
+
+            ## 最大謪
             clip_pi = 1 - tf.square(pi)
             clip_up = tf.cast(clip_pi > 1, tf.float32)
             clip_low = tf.cast(clip_pi < 0, tf.float32)
@@ -340,8 +340,10 @@ class SAC(object):
 
         target_init = [tf.assign(tv, v)
                        for v, tv in zip(tf.global_variables(self.name+'Value'), tf.global_variables(self.name+'Target_Value'))]
+        # gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
+        # gpu_options = tf.GPUOptions(allow_growth=True)
+        gpu_options = tf.GPUOptions(allow_growth=True)
         
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.4)
         self.sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
         # self.sess.gpu_options.allow_growth = True
         # new_graph = tf.Graph()

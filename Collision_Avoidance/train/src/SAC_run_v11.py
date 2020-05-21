@@ -11,6 +11,7 @@ import tensorflow as tf
 from sac_v18 import SAC
 from env_v25 import Test
 from manipulator_h_base_module_msgs.msg import P2PPose
+from CheckCollision_v1 import CheckCollision
 
 MAX_EPISODES = 100000
 MAX_EP_STEPS =  600
@@ -26,7 +27,7 @@ TRAIN_CNT = [0, 0]
 EP = [0, 0]
 WORKS = 1
 SUCCESS_ARRAY = np.zeros([2,500])
-GOAL_RATE = [40, 40]
+GOAL_RATE = [10, 10]
 ACTION_FLAG = [False, False]
 
 def worker(name, workers, agent):
@@ -70,6 +71,8 @@ def worker(name, workers, agent):
         SUCCESS_ARRAY[name, ep%500] = 0.
         # COLLISION = False
         first_fail = True
+
+
         for j in range(MAX_EP_STEPS):
             WORKER_EVENT[name].wait()
             # s = s.tolist()
@@ -104,7 +107,7 @@ def worker(name, workers, agent):
             ep_reward += r
 
             COUNTER[name]+=1
-            if COUNTER[name] >= BATCH_SIZE*32 and COUNTER[name]%(8*WORKS) == 0:
+            if COUNTER[name] >= BATCH_SIZE*32 and COUNTER[name]%(50) == 0:
                 WORKER_EVENT[name].clear()
                 for _ in range(2+int(ep/1000)):
                     agent.learn(TRAIN_CNT[name])
@@ -112,12 +115,12 @@ def worker(name, workers, agent):
                 WORKER_EVENT[name].set()
                 
                 # LEARN_EVENT[name].set()
-            if success_cnt > 10:
+            if success_cnt > 0:
                 # if not COLLISION:
                 SUCCESS_ARRAY[name, ep%500] = 1.
                 break
-            # if done_cnt-success_cnt > 100:
-            #     break
+            if fail:
+                break
         
         for i in range(len(s_arr)):
             agent.replay_buffer[workers].store_transition(s_arr[i], a_arr[i], r_arr[i], s__arr[i], done_arr[i])
@@ -154,7 +157,7 @@ def save(agent, name):
     save_path = agent.saver.save(agent.sess, ckpt_path, write_meta_graph=False)
     print("\nSave Model %s\n" % save_path)
     if GOAL_RATE[name] < 90:
-        GOAL_RATE[name] += 5
+        GOAL_RATE[name] += 10
     else:
         GOAL_RATE[name] += 2
     if GOAL_RATE[name] > 100:
@@ -166,7 +169,8 @@ def train(name):
     print(threading.current_thread())
     env = Test(name, 0)
     agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_dim=env.depth_dim,
-            lr_actor=1e-3, lr_value=1e-3, gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
+            lr_actor=2e-4, lr_value=2e-4    , gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
+            # lr_actor=1e-3, lr_value=1e-3
     env = None
     print('name', name, 'agentID', id(agent))
 
@@ -187,7 +191,7 @@ if __name__ == '__main__':
     LEARN_EVENT = [threading.Event(), threading.Event()]
     WORKER_EVENT = [threading.Event(), threading.Event()]
     COORD = tf.train.Coordinator()
-
+    
     for i in range(2):
         t = threading.Thread(target=train, args=(i,))
         threads.append(t)
