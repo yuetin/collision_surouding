@@ -488,7 +488,10 @@ class Test(core.Env):
 
     def set_goal(self):
         self.goal = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
-        # self.goal[1] = self.np_random.uniform(low=0., high=0.5)
+        self.goal[1] = self.np_random.uniform(low=0.1, high=0.5)
+        # self.goal[1] = 0.3
+        if self.__name == '/left_':
+            self.goal[1] = self.np_random.uniform(low=-0.5, high=-0.1)
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # print('self.goal = ', self.goal)
         # if self.goal[0]>0.5:
@@ -670,7 +673,8 @@ class Test(core.Env):
         if alarm_cnt>0.4:
             self.collision = True
         if ik_success and not self.collision:
-            if self.dis_pos < self.goal_err and self.dis_ori < self.ori_err:
+            # if self.dis_pos < self.goal_err and self.dis_ori < self.ori_err:
+            if self.dis_pos < self.goal_err:
                 self.success = True
                 if not self.done:
                     self.done = True
@@ -696,7 +700,7 @@ class Test(core.Env):
         #     return -20    
             # reward -= 20
         reward -= self.dis_pos*10
-        reward -= self.dis_ori*2
+        # reward -= self.dis_ori*2
         
         if self.collision:
             reward -= 100
@@ -713,8 +717,8 @@ class Test(core.Env):
             # reward += 5
             # return 10
 
-        if self.dis_ori < 0.3:
-            reward += 10
+        # if self.dis_ori < 0.3:
+        #     reward += 10
             # return 10
         # reward += 0.4
         # reward += self.dis_obstacle_1
