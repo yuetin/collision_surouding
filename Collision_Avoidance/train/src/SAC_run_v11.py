@@ -27,7 +27,7 @@ TRAIN_CNT = [0, 0]
 EP = [0, 0]
 WORKS = 1
 SUCCESS_ARRAY = np.zeros([2,500])
-GOAL_RATE = [10, 10]
+GOAL_RATE = [40, 40]
 ACTION_FLAG = [False, False]
 
 def worker(name, workers, agent):
@@ -62,6 +62,7 @@ def worker(name, workers, agent):
         img_arr = []
         s = []
         s = env.reset()
+        time.sleep(2)
         
         ep_reward = 0
         success_cnt = 0
@@ -169,8 +170,9 @@ def train(name):
     print(threading.current_thread())
     env = Test(name, 0)
     agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_dim=env.depth_dim,
-            lr_actor=2e-4, lr_value=2e-4    , gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
+            lr_actor=3e-3, lr_value=3e-3    , gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
             # lr_actor=1e-3, lr_value=1e-3
+            #lr_actor=2e-4, lr_value=2e-4
     env = None
     print('name', name, 'agentID', id(agent))
 

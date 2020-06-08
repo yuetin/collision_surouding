@@ -103,7 +103,7 @@ class Test(core.Env):
         self.rpy_range = 0.2*(workers+1)
         self.done = True
         self.s_cnt = 0
-        self.goal_err = 0.08
+        self.goal_err = 0.05
         self.ori_err = 0.3
         # self.ori_err = 0.15
         self.quat_inv = False
@@ -451,20 +451,20 @@ class Test(core.Env):
         arm_z = -1.4125
         rospy.Subscriber('aa_box_pos',aa_box_pos,self.aa_suck)
         if self.__name == '/right_':
-            self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
-                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
-                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
-                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
+            self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z+0.125,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z+0.125,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z+0.125,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z+0.125,
                                     self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z,
                                     self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z,
                                     self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z, 
                                     self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z]     
 
         if self.__name == '/left_':
-            self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z,
-                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z,
-                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z,
-                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z,
+            self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z+0.125,
+                                    self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z+0.125,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.975+arm_z+0.125,
+                                    self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.975+arm_z+0.125,
                                     self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.625+arm_z,
                                     self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_l_y, 0.625+arm_z,
                                     self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_l_y, 0.625+arm_z, 
@@ -488,13 +488,14 @@ class Test(core.Env):
 
     def set_goal(self):
         self.goal = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
-        self.goal[1] = self.np_random.uniform(low=0.1, high=0.5)
+        self.goal[1] = self.np_random.uniform(low=0.1, high=0.35)
         # self.goal[1] = 0.3
         if self.__name == '/left_':
-            self.goal[1] = self.np_random.uniform(low=-0.5, high=-0.1)
+            self.goal[1] = self.np_random.uniform(low=-0.35, high=-0.1)
+        self.goal[2] = self.np_random.uniform(low=-0.2, high=0.5)
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # print('self.goal = ', self.goal)
-        # if self.goal[0]>0.5:
+        # if self.goal[0]>0.5: 
         #     if self.goal[0]>0.75:
         #         self.goal[2] /= -3
         #     else:
@@ -598,10 +599,10 @@ class Test(core.Env):
             arm_z = -1.4125
             
             if self.__name == '/right_':
-                self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
-                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
-                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z,
-                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z,
+                self.aa_box_possition = [ self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z+0.125,
+                                        self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z+0.125,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.975+arm_z+0.125,
+                                        self.aa_box_x-0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.975+arm_z+0.125,
                                         self.aa_box_x+0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z,
                                         self.aa_box_x+0.05+arm_x, (self.aa_box_y-0.05)*arm_r_y, 0.625+arm_z,
                                         self.aa_box_x-0.05+arm_x, (self.aa_box_y+0.05)*arm_r_y, 0.625+arm_z, 
@@ -681,7 +682,7 @@ class Test(core.Env):
                     self.s_cnt += 1
                     self.range_cnt = self.range_cnt + 0.001 if self.range_cnt < 0.85 else 0.85 #0.004
                     self.rpy_range = self.rpy_range + 0.001 if self.rpy_range < 0.8 else 0.8 #0.002
-                    self.goal_err = self.goal_err*0.993 if self.goal_err > 0.04 else 0.04
+                    self.goal_err = self.goal_err*0.993 if self.goal_err > 0.02 else 0.02
                     # self.goal_err = self.goal_err*0.993 if self.goal_err > 0.015 else 0.015
                     # self.ori_err = self.ori_err*0.993 if self.ori_err > 0.2 else 0.2
                 return True
@@ -712,7 +713,7 @@ class Test(core.Env):
             # reward -= 10
 
 
-        if self.dis_pos < 0.04:
+        if self.dis_pos < 0.02:
             reward += 10
             # reward += 5
             # return 10
