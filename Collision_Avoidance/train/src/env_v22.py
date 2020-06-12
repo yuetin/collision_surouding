@@ -106,7 +106,7 @@ class Test(core.Env):
         self.done = True
         self.s_cnt = 0
         self.goal_err = 0.08
-        self.ori_err = 0.4
+        self.ori_err = 0.3
         self.quat_inv = False
         self.goal_angle = []
         self.object_pub = 0
@@ -396,7 +396,9 @@ class Test(core.Env):
 
     def set_goal(self):
         self.goal = self.np_random.uniform(low=-0.5, high=0.5, size=(8,))
-        # self.goal[1] = self.np_random.uniform(low=0., high=0.5)
+        self.goal[1] = self.np_random.uniform(low=0., high=0.5)
+        if self.__name == '/left_':
+            self.goal[1] = self.np_random.uniform(low=-0.5, high=0)
         rpy = self.np_random.uniform(low=-1*self.rpy_range, high=self.rpy_range, size=(4,))
         # print('self.goal = ', self.goal)
         # if self.goal[0]>0.5:
@@ -528,8 +530,16 @@ class Test(core.Env):
         #         self.set_object2(self.__name+'q', (self.goal[0]-0.08, self.goal[1], self.goal[2]+1.45086), self.goal[3:7])
         #         self.object_pub = 0
         fail = False
-        if not res.success or self.collision or res.singularity:
+        # if not res.success or self.collision or res.singularity:
+        #     fail = True
+        alarm_cnt = 0
+        for i in alarm:
+            alarm_cnt += i
+        if alarm_cnt>0.4:
             fail = True
+
+
+
 
         return self.state, reward, terminal, self.success, fail, suck
         # , self.images_
@@ -542,15 +552,17 @@ class Test(core.Env):
             self.collision = True
 
         if ik_success and not self.collision:
-            if self.dis_pos < self.goal_err and self.dis_ori < self.ori_err:
+            # if self.dis_pos < self.goal_err and self.dis_ori < self.ori_err:
+            if self.dis_pos < self.goal_err:
                 self.success = True
                 if not self.done:
                     self.done = True
                     self.s_cnt += 1
                     self.range_cnt = self.range_cnt + 0.001 if self.range_cnt < 0.85 else 0.85 #0.004
                     self.rpy_range = self.rpy_range + 0.001 if self.rpy_range < 0.8 else 0.8 #0.002
-                    self.goal_err = self.goal_err*0.993 if self.goal_err > 0.015 else 0.015
-                    self.ori_err = self.ori_err*0.993 if self.ori_err > 0.2 else 0.2
+                    self.goal_err = self.goal_err*0.993 if self.goal_err > 0.05 else 0.05
+                    # self.goal_err = self.goal_err*0.993 if self.goal_err > 0.015 else 0.015
+                    # self.ori_err = self.ori_err*0.993 if self.ori_err > 0.2 else 0.2
                 return True
             else:
                 self.success = False
@@ -563,21 +575,26 @@ class Test(core.Env):
     def get_reward(self, s, ik_success, terminal, singularity):
         reward = 0.
 
-        if not ik_success:
-            # reward -= 10.
-            return -20
+        # if not ik_success:
+        #     # reward -= 10.
+        #     return -20
 
         if self.collision:
-            # reward -= 20000
-            return -20
-        if math.fabs(s[7])>0.9:
-            # reward -= 10.
-            return -10
+            reward -=100
+            # return -100
+            # return -20
+            
+        # if math.fabs(s[7])>0.9:
+        #     # reward -= 10.
+        #     return -10
 
         # if terminal:
         #     return 300
-        reward -= self.dis_pos*3
-        reward -= self.dis_ori
+        reward -= self.dis_pos*10
+        # reward -= self.dis_ori*6
+        if self.dis_pos < 0.05:
+            reward +=10
+            # return 10
         # reward += 0.5
         
         # if reward > 0:
@@ -586,9 +603,10 @@ class Test(core.Env):
         # cos_vec = np.dot(self.action[:3],  self.state[8:11])/(np.linalg.norm(self.action[:3]) *np.linalg.norm(self.state[8:11]))
         
         # reward += (cos_vec*self.dis_pos - self.dis_pos)/8
-        reward -= 1
-        if singularity:
-            reward -= 3
+        # reward -= 1
+        # if singularity:
+        #     reward -= 15
+            #-3
         return reward
         #==================================================================================
 
