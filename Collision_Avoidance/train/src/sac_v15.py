@@ -3,7 +3,7 @@ import tensorflow as tf
 import gym
 import random
 import sys
-NAME = 'SAC_v15_6'
+NAME = 'SAC_v15_9'
 
 import warnings
  
@@ -196,79 +196,79 @@ class   FUCK_CNNNETWORK(object):
         inputs=input_x_images,
         filters=64,
         kernel_size=[5,5],
-        strides=1,
+        strides=2,
         padding='same',
-        activation=tf.nn.leaky_relu
+        activation=tf.nn.relu
         )
         # print(conv1)
         # conv1=tf.layers.batch_normalization(conv1,training=True)
 
         ## 池化層 1  
-        pool1=tf.layers.max_pooling2d(
-        inputs=conv1,
-        pool_size=[2,2],
-        strides=2
-        )
+        # pool1=tf.layers.max_pooling2d(
+        # inputs=conv1,
+        # pool_size=[2,2],
+        # strides=2
+        # )
         # print(pool1)
 
         ## CNN 第二層
         conv2=tf.layers.conv2d(
-        inputs=pool1,
+        inputs=conv1,
         filters=64,
         kernel_size=[5,5],
-        strides=1,
+        strides=2,
         padding='same',
-        activation=tf.nn.leaky_relu
+        activation=tf.nn.relu
         )   
         # conv2=tf.layers.batch_normalization(conv2,training=True)
 
-        pool2=tf.layers.max_pooling2d(
-        inputs=conv2,
-        pool_size=[2,2],
-        strides=2
-        )
+        # pool2=tf.layers.max_pooling2d(
+        # inputs=conv2,
+        # pool_size=[2,2],
+        # strides=2
+        # )
 
         ## CNN 第三層
         conv3=tf.layers.conv2d(
-        inputs=pool2,
+        inputs=conv2,
         filters=32,
         kernel_size=[3,3],
-        strides=1,
+        strides=2,
         padding='same',
-        activation=tf.nn.leaky_relu
+        activation=tf.nn.relu
         )   
         # conv3=tf.layers.batch_normalization(conv3,training=True)
 
-        pool3=tf.layers.max_pooling2d(
-        inputs=conv3,
-        pool_size=[2,2],
-        strides=2
-        )
+        # pool3=tf.layers.max_pooling2d(
+        # inputs=conv3,
+        # pool_size=[2,2],
+        # strides=2
+        # )
 
         ## CNN 第四層
-        conv4=tf.layers.conv2d(
-        inputs=pool3,
+        conv4= tf.layers.conv2d(
+        inputs=conv3,
         filters=32,
         kernel_size=[3,3],
-        strides=1,
+        strides=2,
         padding='same',
-        activation=tf.nn.leaky_relu
+        activation=tf.nn.relu
         )   
         # conv4=tf.layers.batch_normalization(conv4,training=True)
 
-        pool4=tf.layers.max_pooling2d(
-        inputs=conv4,
-        pool_size=[2,2],
-        strides=2
-        )
+        # pool4=tf.layers.max_pooling2d(
+        # inputs=conv4,
+        # pool_size=[2,2],
+        # strides=2
+        # )
         
         # flat=tf.reshape(pool4,[-1,20*15*32])
-        flat=tf.reshape(pool4,[-1,8*8*32])
+        flat=tf.reshape(conv4,[-1,8*8*32])
         # flat=tf.reshape(pool3,[-1,4*3*32])
         dense_cnn=tf.layers.dense(
         inputs=flat,
-        units=1024,
-        # activation=tf.nn.leaky_relu
+        units=512,
+        activation=tf.nn.leaky_relu
         )
 
         # dropout=tf.layers.dropout(

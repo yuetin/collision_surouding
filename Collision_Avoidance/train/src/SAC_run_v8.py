@@ -129,8 +129,8 @@ def worker(name, workers, agent):
                 break
             # if done_cnt-success_cnt > 100:
             #     break
-            # if done:
-            #     break
+            if fail:
+                break
         
         for i in range(len(s_arr)):
             agent.replay_buffer[workers].store_transition(s_arr[i], imgex_arr[i], a_arr[i], r_arr[i], s__arr[i], img_arr[i], done_arr[i])
@@ -190,7 +190,7 @@ def train(name):
     print(threading.current_thread())
     env = Test(name, 0)
     agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_dim=env.depth_dim,
-            lr_actor=2e-4, lr_value=2e-4, gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
+            lr_actor=1e-3, lr_value=1e-3, gamma=0.99, tau=0.995, buffers = WORKS, name=SIDE[name], seed=name)
             # lr_actor=1e-3, lr_value=1e-3
     env = None
     print('name', name, 'agentID', id(agent))
