@@ -96,7 +96,7 @@ def run(nameIndx):
                 break
             if __ == 999:
                 reset_start = True
-        arm.clear_cmd()
+        # arm.clear_cmd()
         # COLLISION = False
         # IKFAIL = False
         # SINGULARITY = False

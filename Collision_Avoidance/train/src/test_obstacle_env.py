@@ -537,7 +537,7 @@ class Test(core.Env):
         # print(self.aa_box_x,"III",self.aa_box_y)
         # if self.__name == '/right_':
         self.set_object('table_box', (0.55,0,0.345), (0, 0, 0, 0))
-        self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.8), (0, 0, 0, 0))
+        self.set_object('aa_box', (self.aa_box_x,self.aa_box_y,0.826917), (0, 0, 0, 0))
             # print(suck)
             # print(s)
         terminal = self._terminal(s, res.success, alarm)
@@ -569,7 +569,7 @@ class Test(core.Env):
         for i in alarm:
             alarm_cnt += i
         if alarm_cnt>0.4:
-            fail = True
+            self.collision = True
 
 
 
@@ -584,8 +584,9 @@ class Test(core.Env):
             alarm_cnt += i
         if alarm_cnt>0.4:
             self.collision = True
-
-        if ik_success and not self.collision:
+            
+        if not self.collision:
+        # if ik_success and not self.collision:
             # if self.dis_pos < self.goal_err and self.dis_ori < self.ori_err:
             if self.dis_pos < self.goal_err:
                 self.success = True

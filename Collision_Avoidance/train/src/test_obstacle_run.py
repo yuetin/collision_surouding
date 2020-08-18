@@ -55,27 +55,34 @@ def run(nameIndx):
 
     agent = SAC(act_dim=env.act_dim, obs_dim=env.obs_dim, depth_dim=env.depth_dim, name=SIDE[nameIndx])
     reset_start = False
-
+    rate = rospy.Rate(40)
     for cnt in range(1000):
+        
         done_cnt = 0
         COLLISION = False
         IKFAIL = False
         SINGULARITY = False
 
         s, depth = env.reset(reset_start)
-        print("aaaaaaaaaaaaaaaaaa")
         reset_start = True
         goal = env.get_goal
         goal = np.append(goal, 0)
         start = (s[:8])
         for __ in range(1000):
-            a = agent.choose_action(s, depth)
-            s, done, collision, ik_success, singularity= env.step(a)
+            WORKER_EVENT[nameIndx].wait()
+            a = agent.choose_action(s,depth)
+            s, done, collision, ik_success, singularity = env.step(a)
             done_cnt += int(done)
-            if COLLISION and collision:
+            if collision:
                 COLLISION_ARRAY[cnt%1000] = 1
-            elif collision:
                 COLLISION = True
+                break
+            # if COLLISION and collision:
+            #     COLLISION_ARRAY[cnt%1000] = 1
+            #     break
+            # elif collision:
+            #     COLLISION = True
+            #     # break
             else:
                 COLLISION = False
             if IKFAIL and not ik_success:
@@ -91,17 +98,19 @@ def run(nameIndx):
                     SINGULARITY = True
             if done_cnt > 0:    
                 SUCCESS_ARRAY[cnt%1000] = 1
-                reset_start = False
+                reset_start = True
                 # COLLISION_ARRAY[cnt%1000] = 0
                 # IKFAIL_ARRAY[cnt%1000] = 0
                 break
             if __ == 999:
                 reset_start = True
+            rate.sleep()
+        WORKER_EVENT[nameIndx].clear()
+        WORKER_EVENT[nameIndx].set()
 
 
 
 
-        print("bbbbbbbbbbbbbbbbbbbbbbb")
         arm.clear_cmd()
         # COLLISION = False
         # IKFAIL = False
@@ -109,9 +118,7 @@ def run(nameIndx):
         # time.sleep(0.5)
         # env.move_arm(start)
         # time.sleep(1)
-        # print("cccccccccccccccccccccc")
         # arm.ikMove_quat('p2p', goal[:3], goal[3:7], goal[7])
-        # print("dddddddddddddddddddddddddddd")
         # while arm.is_busy:
         #     if env.check_collision():
         #         COLLISION = True
@@ -124,9 +131,6 @@ def run(nameIndx):
         #     if arm.singularity:
         #         SINGULARITY = True
         #         SINGULARITY_ARRAY_P2P[cnt%1000] = 1
-
-        #     arm.clear_cmd()
-        #     break
         # if not COLLISION and not IKFAIL:
         #     SUCCESS_ARRAY_P2P[cnt%1000] = 1
         # COLLISION = False
@@ -150,7 +154,7 @@ def run(nameIndx):
         #         SINGULARITY_ARRAY_LINE[cnt%1000] = 1
         # if not COLLISION and not IKFAIL:
         #     SUCCESS_ARRAY_LINE[cnt%1000] = 1
-        print("eeeeeeeeeeeeeeee")
+
         S_RATE = 0
         S_RATE_P2P = 0
         S_RATE_LINE = 0
@@ -217,11 +221,13 @@ if __name__ == '__main__':
     threads = []
     cmd = np.zeros([2,7])
     move = [False, False]
+    WORKER_EVENT = [threading.Event(), threading.Event()]
     COORD = tf.train.Coordinator()
     
     for i in range(2):
         t = threading.Thread(target=run, args=(i,))
         threads.append(t)
+        WORKER_EVENT[i].set()
     COORD.join(threads)
     for i in range(2):
         threads[i].start()
